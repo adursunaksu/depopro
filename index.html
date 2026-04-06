@@ -3,64 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Depo Pro v48</title>
+    <title>Depo Pro v50</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
-
     <style>
         :root { --excell-green: #217346; --excell-hover: #1a5c38; --border: #d4d4d4; --bg: #f3f3f3; }
         .bg-in { background-color: #d9e9f3 !important; color: #0078d4 !important; font-weight: bold; }
         .bg-out { background-color: #f8dbdb !important; color: #d83b01 !important; font-weight: bold; }
-        
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; font-size: 11px; }
         body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        
         #sube-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2000; padding:20px; }
         .modal-box { background:white; border-radius:8px; height:85vh; display:flex; flex-direction:column; overflow:hidden; }
         .modal-search { padding:10px; border-bottom:1px solid #eee; background: #f9f9f9; }
         .modal-search input { width:100%; padding:15px; border:2px solid var(--excell-green); border-radius:4px; font-size:14px; }
         .modal-list { flex:1; overflow-y:auto; }
         .sube-item { padding:15px; border-bottom:1px solid #f0f0f0; font-size:13px; font-weight: 500; }
-
         .excel-bar { background: var(--excell-green); color: white; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
         .user-cell { background: #fff; color: #333; padding: 3px 10px; border: 1px solid #999; font-weight: bold; }
         .content { flex: 1; overflow-y: auto; padding: 5px; padding-bottom: 70px; }
-        
         .excel-row-container { display: flex; border: 1px solid #ccc; background: #fff; margin-bottom: 3px; height: 44px; align-items: center; border-radius: 4px; overflow: hidden; }
         .type-select { width: 70px; height: 100%; border: none; border-right: 1px solid #ccc; padding-left: 5px; font-weight: bold; }
         .barkod-input { flex: 2; height: 100%; border: none; border-right: 1px solid #ccc; padding: 0 12px; font-size: 13px; background: #fafafa; }
         .urun-select { flex: 1; height: 100%; border: none; padding-left: 5px; background: #fff; font-weight: 500; }
-
         .excel-actions { display: flex; gap: 8px; padding: 10px; background: #fff; border: 1px solid #ccc; margin-top: 5px; border-radius: 4px; }
         .btn-excel-add { flex: 1; padding: 12px; background: #f8f9fa; border: 1px solid #adb5bd; color: #495057; font-weight: bold; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 5px; }
         .btn-excel-save { flex: 2; padding: 12px; background: var(--excell-green); border: 1px solid #1a5c38; color: white; font-weight: bold; border-radius: 4px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; }
-
         .status-waiting { background-color: #ffebee !important; color: #b71c1c !important; }
         .status-done { background-color: #e8f5e9 !important; color: #2e7d32 !important; }    
-        .status-done .strikethrough { text-decoration: line-through !important; opacity: 0.6; }
-
         table.excel-table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
         .excel-table th, .excel-table td { border: 1px solid var(--border); padding: 6px 2px; text-align: left; overflow: hidden; }
         .excel-table th { background: #ebf1de; font-size: 10px; }
         .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; }
-
         .btn-status { border: none; padding: 8px 2px; border-radius: 4px; font-weight: bold; font-size: 9px; width: 100%; cursor: pointer; }
         .btn-red { background: #d32f2f; color: white; } 
         .btn-green { background: #2e7d32; color: white; } 
         .kp-input-small { width: 100%; padding: 4px 2px; border: 1px solid #aaa; font-size: 11px; text-align: center; }
-
         .excel-nav { height: 55px; background: #fff; border-top: 1px solid var(--border); display: flex; position: fixed; bottom: 0; width: 100%; }
-        .excel-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; }
+        .excel-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; cursor: pointer; }
         .excel-nav-item.active { background: #e9e9e9; color: var(--excell-green); font-weight: bold; border-top: 3px solid var(--excell-green); }
-
         #login-screen { position: fixed; inset: 0; background: var(--excell-green); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
     </style>
 </head>
 <body>
 
 <div id="login-screen">
-    <h2>DEPO PRO v48</h2>
+    <h2>DEPO PRO v50</h2>
     <input type="email" id="email" placeholder="E-posta" style="width:80%; margin:10px; padding:12px;">
     <input type="password" id="pass" placeholder="Şifre" style="width:80%; margin:10px; padding:12px;">
     <button onclick="login()" style="width:80%; padding:15px; font-weight:bold;">GİRİŞ</button>
@@ -81,21 +69,22 @@
 
 <div class="content">
     <div id="p-islem" class="app-page">
-        <div style="background:#fff; padding:10px; border:1px solid #ccc; margin-bottom:5px; border-radius:4px;">
-            <div id="sube-select-container">
-                <input type="text" id="target-sube" placeholder="Hedef Şube Seçin (117)" readonly onclick="openModal()" style="width:100%; margin-bottom:10px; padding:12px; background:#fffde7; border:1px solid #ccc; font-weight:bold; border-radius:4px;">
+        <div id="form-content">
+            <div style="background:#fff; padding:10px; border:1px solid #ccc; margin-bottom:5px; border-radius:4px;">
+                <div id="sube-select-container">
+                    <input type="text" id="target-sube" placeholder="Hedef Şube Seçin (117)" readonly onclick="openModal()" style="width:100%; margin-bottom:10px; padding:12px; background:#fffde7; border:1px solid #ccc; font-weight:bold; border-radius:4px;">
+                </div>
+                <label style="display:flex; align-items:center; gap:10px; color:var(--excell-green); font-weight:bold; font-size:12px;">
+                    <input type="checkbox" id="to-my-truck" onchange="toggleTruckMode()"> 🚛 ARACIMA TRANSFER ET
+                </label>
             </div>
-            <label style="display:flex; align-items:center; gap:10px; color:var(--excell-green); font-weight:bold; font-size:12px;">
-                <input type="checkbox" id="to-my-truck" onchange="toggleTruckMode()"> 🚛 ARACIMA TRANSFER ET
-            </label>
-        </div>
-        <div id="items-container"></div>
-        <div class="excel-actions">
-            <button class="btn-excel-add" onclick="addRowEx()"><span>➕</span> Satır Ekle</button>
-            <button class="btn-excel-save" onclick="saveAllEx()"><span>💾</span> KAYDET (SİSTEME İŞLE)</button>
+            <div id="items-container"></div>
+            <div class="excel-actions">
+                <button class="btn-excel-add" onclick="addRowEx()"><span>➕</span> Satır Ekle</button>
+                <button class="btn-excel-save" onclick="saveAllEx()"><span>💾</span> KAYDET (SİSTEME İŞLE)</button>
+            </div>
         </div>
     </div>
-
     <div id="p-akis" class="app-page" style="display:none;">
         <table class="excel-table" id="mainExTable">
             <thead>
@@ -110,16 +99,15 @@
             <tbody></tbody>
         </table>
     </div>
-
     <div id="p-depolar" class="app-page" style="display:none;">
         <div id="depoExList"></div>
     </div>
 </div>
 
 <div class="excel-nav">
-    <div class="excel-nav-item active" onclick="tabEx('islem', this)">📝 Form</div>
-    <div class="excel-nav-item" onclick="tabEx('akis', this)">📊 Akış</div>
-    <div class="excel-nav-item" onclick="tabEx('depolar', this)">📦 Depo</div>
+    <div class="excel-nav-item active" id="nav-form" onclick="tabEx('islem', this)">📝 Form</div>
+    <div class="excel-nav-item" id="nav-akis" onclick="tabEx('akis', this)">📊 Akış</div>
+    <div class="excel-nav-item" id="nav-depo" onclick="tabEx('depolar', this)">📦 Depo</div>
 </div>
 
 <script>
@@ -136,28 +124,27 @@
     const db = firebase.database();
     
     let uKey = ""; let isAdmin = false;
+    // Araç Eşleştirme Tablosu
+    const aracListesi = {
+        "adaksu@ziraatbank.com.tr": "s542 Ahmet",
+        "dokocadag@ziraatbank.com.tr": "s573 Doğaç",
+        "taylansahin@ziraatbank.com.tr": "s574 Taylan",
+        "adincel@ziraatbank.com.tr": "s569 Ali Rıza",
+        "ahaksu@ziraatbank.com.tr": "s528 Haluk"
+    };
+
     const subeler = ["S016 İZMİR SAHA DEPO", "68 BERGAMA/İZMİR ŞUBESİ","137 İZMİR ŞUBESİ","138 URLA/İZMİR ŞUBESİ","139 BAYINDIR/İZMİR ŞUBESİ","140 TİRE/İZMİR ŞUBESİ","141 ÇEŞME/İZMİR ŞUBESİ","142 SEFERİHİSAR/İZMİR ŞUBESİ","143 KARABURUN/İZMİR ŞUBESİ","145 KEMALPAŞA/İZMİR ŞUBESİ","146 MENEMEN/İZMİR ŞUBESİ","188 MANİSA ŞUBESİ","189 AKHİSAR/MANİSA ŞUBESİ","190 ALAŞEHİR/MANİSA ŞUBESİ","191 DEMİRCİ/MANİSA ŞUBESİ","192 SALİHLİ/MANİSA ŞUBESİ","193 SOMA/MANİSA ŞUBESİ","194 KIRKAĞAÇ/MANİSA ŞUBESİ","195 TURGUTLU/MANİSA ŞUBESİ","196 KULA/MANİSA ŞUBESİ","197 GÖRDES/MANİSA ŞUBESİ","221 ÖDEMİŞ/İZMİR ŞUBESİ","317 TORBALI/İZMİR ŞUBESİ","344 FOÇA/İZMİR ŞUBESİ","386 KINIK/İZMİR ŞUBESİ","387 DİKİLİ/İZMİR ŞUBESİ","410 ÇANKAYA/İZMİR ŞUBESİ","411 KARŞIYAKA/İZMİR ŞUBESİ","422 KİRAZ/İZMİR ŞUBESİ","561 SELÇUK/İZMİR ŞUBESİ","562 SELENDİ/MANİSA ŞUBESİ","572 SARIGÖL/MANİSA ŞUBESİ","590 ALAÇATI-ÇEŞME/İZMİR ŞUBESİ","615 BORNOVA/İZMİR ŞUBESİ","622 SARUHANLI/MANİSA ŞUBESİ","678 EŞREFPAŞA/İZMİR ŞUBESİ","711 BUCA/İZMİR ŞUBESİ","712 ALSANCAK/İZMİR ŞUBESİ","714 ALİAĞA/İZMİR ŞUBESİ","726 NARLIDERE/İZMİR ŞUBESİ","730 AHMETLİ/MANİSA ŞUBESİ","735 GÖLMARMARA/MANİSA ŞUBESİ","776 KONAK/İZMİR ŞUBESİ","791 MENDERES/İZMİR ŞUBESİ","800 ÇİĞLİ/İZMİR ŞUBESİ","803 BAYRAKLI/İZMİR ŞUBESİ","804 HATAY/İZMİR ŞUBESİ","807 GÖZTEPE/İZMİR ŞUBESİ","808 BALCHOVA/İZMİR ŞUBESİ","812 KARABAĞLAR/İZMİR ŞUBESİ","814 ÜÇYOL/İZMİR ŞUBESİ","869 KÖPRÜBAŞI/MANİSA ŞUBESİ","884 26 AĞUSTOS/İZMİR ŞUBESİ","902 ŞİRİNYER/İZMİR ŞUBESİ","904 ŞEMİKLER/İZMİR ŞUBESİ","911 ALTINDAĞ/İZMİR ŞUBESİ","928 GÜMÜŞPALA/İZMİR ŞUBESİ","934 DENİZBOSTANLI/İZMİR ŞUBESİ","974 GÜMÜLDÜR-MENDERES/İZMİR ŞUBESİ","975 MTK ÇARŞI/İZMİR ŞUBESİ","999 ÇAMDİBİ/İZMİR ŞUBESİ","1000 GAZİEMİR/İZMİR ŞUBESİ","1021 BEYDAĞ/İZMİR ŞUBESİ","1043 YEŞİLYURT/İZMİR ŞUBESİ","1089 ALAYBEY/İZMİR ŞUBESİ","1203 ÜÇKUYULAR/İZMİR ŞUBESİ","1204 KAHRAMANLAR/İZMİR ŞUBESİ","1256 MESİR/MANİSA ŞUBESİ","1333 EFES/İZMİR ŞUBESİ","1403 KAZIMDİRİK/İZMİR ŞUBESİ","1446 EGE TIP/İZMİR ŞUBESİ","1506 9 EYLÜL ÜNİVERSİTESİ/İZMİR ŞUBESİ","1533 FAHRETTİN ALTAY/İZMİR ŞUBESİ","1625 GÜZELBAHÇE/İZMİR ŞUBESİ","1743 IŞIKKENT/İZMİR ŞUBESİ","1750 İZMİR PARA GRUP MERKEZİ","1751 İZMİR KURUMSAL ŞUBE","1768 ATATÜRK OSB/İZMİR TİCARİ ŞUBE","1778 YENİ GIDA ÇARŞISI/İZMİR ŞUBESİ","1815 İZMİR BÖLGE YÖNETİCİLİĞİ - KONAK","1816 İZMİR BÖLGE YÖNETİCİLİĞİ - KARŞIYAKA","1840 MANİSA BÖLGE YÖNETİCİLİĞİ","1903 GİRNE BULVARI/İZMİR ŞUBESİ","1938 MANİSA TİCARİ ŞUBE","1958 KARABAĞLAR/İZMİR TİCARİ ŞUBE","1961 BOZYAKA/İZMİR ŞUBESİ","1972 AYRANCILAR/İZMİR ŞUBESİ","1984 MANAVKUYU/İZMİR ŞUBESİ","1987 YENİŞAKRAN-ALİAĞA/İZMİR ŞUBESİ","1992 GEDİZ MAHALLESİ/İZMİR ŞUBESİ","1993 YIKIKKEMER/İZMİR ŞUBESİ","2081 YENİ GİRNE/İZMİR ŞUBESİ","2088 ŞEHİTLER/MANİSA ŞUBESİ","2129 ATAKENT/İZMİR ŞUBESİ","2137 OSMANGAZİ-BAYRAKLI/İZMİR ŞUBESİ","2152 ATAŞEHİR/İZMİR ŞUBESİ","2159 İZMİR CADDESİ/MANİSA ŞUBESİ","2170 HASAN TAHSİN-BUCA/İZMİR ŞUBESİ","2267 KEMALPAŞA/İZMİR TİCARİ ŞUBE","2319 CUMHURİYET-SALİHLİ/MANİSA ŞUBESİ","2335 BORNOVA ATA/İZMİR ŞUBESİ","2408 ŞEHZADELER/MANİSA ŞUBESİ","2425 SEYDİKÖY-GAZİEMİR/İZMİR ŞUBESİ","2436 MENDERES CADDESİ/İZMİR ŞUBESİ","2474 ÇAĞLAK-AKHİSAR/MANİSA ŞUBESİ","2477 ULUKENT-MENEMEN/İZMİR ŞUBESİ","2494 4.SANAYİ SİTESİ/İZMİR ŞUBESİ","2496 ULUS MEYDANI-ÖDEMİŞ/İZMİR ŞUBESİ","2504 7 EYLÜL-TURGUTLU/MANİSA ŞUBESİ","2514 ÇANDARLI-DİKİLİ/İZMİR ŞUBESİ","2515 1.SANAYİ/İZMİR ŞUBESİ","2566 ERTUĞRUL MAHALLESİ-TORBALI/İZMİR ŞUBESİ","2630 YEŞİLOVA-BORNOVA/İZMİR ŞUBESİ","2642 YUNUSEMRE/MANİSA ŞUBESİ","2673 BAKIRÇAY-BERGAMA/İZMİR ŞUBESİ","2697 ATATÜRK HASTANESİ/İZMİR ŞUBESİ"];
 
-    function openModal() {
-        document.getElementById('sube-modal').style.display = 'block';
-        document.getElementById('sube-ara').value = ""; filterSubeler();
-        setTimeout(() => document.getElementById('sube-ara').focus(), 150);
-    }
+    function openModal() { if(isAdmin) return; document.getElementById('sube-modal').style.display = 'block'; document.getElementById('sube-ara').value = ""; filterSubeler(); setTimeout(() => document.getElementById('sube-ara').focus(), 150); }
     function closeModal() { document.getElementById('sube-modal').style.display = 'none'; }
     function selectSube(val) { document.getElementById('target-sube').value = val; closeModal(); }
     
     function filterSubeler() {
         const ara = document.getElementById('sube-ara').value.toLocaleUpperCase('tr-TR');
-        const list = document.getElementById('modal-list-body');
-        list.innerHTML = "";
+        const list = document.getElementById('modal-list-body'); list.innerHTML = "";
         const res = subeler.filter(s => s.toLocaleUpperCase('tr-TR').includes(ara));
         if(res.length === 1 && ara.length > 0) { selectSube(res[0]); return; }
-        res.forEach(s => {
-            const div = document.createElement('div');
-            div.className = "sube-item"; div.innerText = s;
-            div.onclick = () => selectSube(s);
-            list.appendChild(div);
-        });
+        res.forEach(s => { const div = document.createElement('div'); div.className = "sube-item"; div.innerText = s; div.onclick = () => selectSube(s); list.appendChild(div); });
     }
 
     function login() {
@@ -165,30 +152,27 @@
         const p = document.getElementById('pass').value;
         firebase.auth().signInWithEmailAndPassword(e, p).then(u => {
             isAdmin = (e === "ekaradeniz@ziraatbank.com.tr");
-            uKey = isAdmin ? "EDIZ" : e.split('@')[0].toUpperCase();
+            uKey = isAdmin ? "EDİZ" : (aracListesi[e] || e.split('@')[0].toUpperCase());
             document.getElementById('userTag').innerText = uKey;
             document.getElementById('login-screen').style.display = 'none';
-            addRowEx("GİRİŞ"); addRowEx("ÇIKIŞ");
+            if(isAdmin) { document.getElementById('nav-form').remove(); document.getElementById('p-islem').remove(); tabEx('akis', document.getElementById('nav-akis')); } 
+            else { addRowEx("GİRİŞ"); addRowEx("ÇIKIŞ"); }
             init();
         }).catch(() => alert("Giriş Başarısız!"));
     }
 
     function toggleTruckMode() {
+        if(isAdmin) return;
         const isTruck = document.getElementById('to-my-truck').checked;
-        const subeContainer = document.getElementById('sube-select-container');
-        const subeInput = document.getElementById('target-sube');
-        subeContainer.style.display = isTruck ? "none" : "block";
-        document.querySelectorAll('.type-select').forEach(sel => {
-            sel.style.display = isTruck ? "none" : "block";
-            if(isTruck) sel.value = "GİRİŞ";
-        });
-        if(isTruck) { subeInput.value = uKey; } else { subeInput.value = ""; }
+        document.getElementById('sube-select-container').style.display = isTruck ? "none" : "block";
+        document.querySelectorAll('.type-select').forEach(sel => { sel.style.display = isTruck ? "none" : "block"; if(isTruck) sel.value = "GİRİŞ"; });
+        document.getElementById('target-sube').value = isTruck ? uKey : "";
     }
 
     function addRowEx(defaultType = "GİRİŞ") {
+        if(isAdmin) return;
         const isTruck = document.getElementById('to-my-truck').checked;
-        const div = document.createElement('div');
-        div.className = "excel-row-container";
+        const div = document.createElement('div'); div.className = "excel-row-container";
         const isOut = defaultType === "ÇIKIŞ";
         div.innerHTML = `
             <select class="type-select ${isOut ? 'bg-out' : 'bg-in'}" onchange="colorUpdate(this)" style="${isTruck ? 'display:none;' : ''}">
@@ -197,23 +181,13 @@
             </select>
             <input type="number" inputmode="numeric" placeholder="Barkod No..." class="barkod-input">
             <select class="urun-select">
-                <option value="Cüzdan yazıcı">Cüzdan yazıcı</option>
-                <option value="Pc">Pc</option>
-                <option value="Tarayıcı">Tarayıcı</option>
-                <option value="Monitör">Monitör</option>
-                <option value="Ip telefon">Ip telefon</option>
-                <option value="Switch">Switch</option>
-                <option value="Router">Router</option>
-                <option value="Sunucu">Sunucu</option>
-                <option value="Nvr">Nvr</option>
-                <option value="Laptop">Laptop</option>
-                <option value="Lazer yazıcı">Lazer yazıcı</option>
-            </select>
-        `;
+                <option value="Cüzdan yazıcı">Cüzdan yazıcı</option><option value="Pc">Pc</option><option value="Tarayıcı">Tarayıcı</option><option value="Monitör">Monitör</option><option value="Ip telefon">Ip telefon</option><option value="Switch">Switch</option><option value="Router">Router</option><option value="Sunucu">Sunucu</option><option value="Nvr">Nvr</option><option value="Laptop">Laptop</option><option value="Lazer yazıcı">Lazer yazıcı</option>
+            </select>`;
         document.getElementById('items-container').appendChild(div);
     }
 
     function saveAllEx() {
+        if(isAdmin) return;
         const isTruck = document.getElementById('to-my-truck').checked;
         const target = isTruck ? uKey : document.getElementById('target-sube').value;
         if(!target) return alert("Hedef Şube Seçin!");
@@ -232,11 +206,10 @@
                 savedCount++;
             }
         });
-        if(savedCount === 0) return alert("Lütfen en az bir barkod girin!");
+        if(savedCount === 0) return alert("Barkod girin!");
         document.getElementById('items-container').innerHTML = ""; 
-        document.getElementById('to-my-truck').checked = false;
-        toggleTruckMode(); addRowEx("GİRİŞ"); addRowEx("ÇIKIŞ");
-        alert(savedCount + " Kayıt Tamamlandı.");
+        document.getElementById('to-my-truck').checked = false; toggleTruckMode();
+        addRowEx("GİRİŞ"); addRowEx("ÇIKIŞ"); alert(savedCount + " Kayıt Tamamlandı.");
     }
 
     function saveKP(key, val) { db.ref('transferler/canli_akis/' + key).update({ kp: val }); }
@@ -244,9 +217,9 @@
 
     function tabEx(id, el) {
         document.querySelectorAll('.app-page').forEach(p => p.style.display = 'none');
-        document.getElementById('p-'+id).style.display = 'block';
+        if(document.getElementById('p-'+id)) document.getElementById('p-'+id).style.display = 'block';
         document.querySelectorAll('.excel-nav-item').forEach(n => n.classList.remove('active'));
-        el.classList.add('active');
+        if(el) el.classList.add('active');
     }
 
     function init() {
@@ -254,12 +227,10 @@
             const b = document.querySelector('#mainExTable tbody'); b.innerHTML = "";
             snap.forEach(i => {
                 const d = i.val(); const isDone = d.status === "YAPILDI";
-                const rowClass = isDone ? "status-done" : "status-waiting";
-                
-                b.innerHTML = `<tr class="${rowClass}">
-                    <td><span class="truncate strikethrough">${d.yer}</span></td>
-                    <td class="strikethrough"><b>${d.urun}</b><br>${d.barkod}</td>
-                    <td class="strikethrough">${d.gonderen}</td>
+                b.innerHTML = `<tr class="${isDone ? 'status-done' : 'status-waiting'}">
+                    <td><span class="truncate ${isDone ? 'strikethrough' : ''}">${d.yer}</span></td>
+                    <td class="${isDone ? 'strikethrough' : ''}"><b>${d.urun}</b><br>${d.barkod}</td>
+                    <td class="${isDone ? 'strikethrough' : ''}">${d.gonderen}</td>
                     <td><input type="number" class="kp-input-small" onblur="saveKP('${i.key}', this.value)" value="${d.kp || ''}"></td>
                     <td><button class="btn-status ${isDone ? 'btn-green' : 'btn-red'}" onclick="toggleStatus('${i.key}','${d.status}')">${isDone ? 'TAMAMLANDI' : 'BEKLEYEN'}</button></td>
                 </tr>` + b.innerHTML;
@@ -269,8 +240,7 @@
             const c = document.getElementById('depoExList'); c.innerHTML = "";
             snap.forEach(d => {
                 let rws = ""; d.forEach(r => { const v = r.val(); rws += `<tr><td>${v.urun}</td><td>${v.barkod}</td></tr>`; });
-                let headerName = d.key + " ARAÇ ENVANTERİ";
-                c.innerHTML += `<div style="margin-bottom:10px; border:1px solid #ccc; border-radius:4px; overflow:hidden;"><div style="background:#217346; color:white; padding:5px; font-weight:bold;">👤 ${headerName}</div><table class="excel-table">${rws}</table></div>`;
+                c.innerHTML += `<div style="margin-bottom:10px; border:1px solid #ccc; border-radius:4px; overflow:hidden;"><div style="background:#217346; color:white; padding:5px; font-weight:bold;">👤 ${d.key} ENVANTERİ</div><table class="excel-table">${rws}</table></div>`;
             });
         });
     }
