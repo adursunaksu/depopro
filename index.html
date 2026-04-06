@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v72</title>
+    <title>S016 Depo Takip v74</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -14,7 +14,6 @@
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; font-size: 11px; }
         body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Modal Stilleri */
         #transfer-modal, #sube-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2000; padding:20px; }
         .modal-box { background:white; border-radius:8px; height:85vh; display:flex; flex-direction:column; overflow:hidden; border: 1px solid #666; }
         .modal-search { padding:10px; border-bottom:1px solid #eee; }
@@ -23,7 +22,6 @@
         .sube-item { padding:15px; border-bottom:1px solid #f0f0f0; font-size:13px; color: #333; cursor: pointer; }
         .sube-item:active { background: #e8f5e9; }
         
-        /* Düzeltilen Buton Stili */
         .add-btn-list { padding: 15px; background: #e8f5e9; color: var(--excell-green); text-align: center; font-weight: bold; cursor: pointer; border-top: 1px solid #ddd; }
 
         .excel-bar { background: var(--excell-green); color: white; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
@@ -54,6 +52,7 @@
         .excel-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; cursor: pointer; }
         .excel-nav-item.active { background: #f0f0f0; color: var(--excell-green); font-weight: bold; border-top: 3px solid var(--excell-green); }
         #login-screen { position: fixed; inset: 0; background: var(--excell-green); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .kp-input-large { width: 100%; border: 1px solid #ddd; padding: 4px; border-radius: 2px; }
     </style>
 </head>
 <body>
@@ -86,7 +85,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016_DEPO_TAKIP_v72.xlsx</div>
+    <div style="font-weight:bold;">S016_DEPO_TAKIP_v74.xlsx</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -110,10 +109,10 @@
             <thead>
                 <tr>
                     <th style="width:22%;">Lokasyon</th>
-                    <th style="width:23%;">Ürün</th>
+                    <th style="width:23%;">Ürün-Barkod</th>
                     <th style="width:14%;">Asistan</th>
                     <th style="width:20%;">KP NO</th>
-                    <th style="width:21%;">DURUM</th>
+                    <th style="width:21%;">FINART</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -121,9 +120,6 @@
     </div>
     
     <div id="p-depo" class="app-page" style="display:none;">
-        <div style="background:#fff3cd; padding:8px; border:1px solid #ffeeba; margin-bottom:10px; border-radius:4px; font-weight:bold; text-align:center;">
-            💡 Ürünü göndermek için üzerine dokunun!
-        </div>
         <div id="depoExList"></div>
     </div>
 </div>
@@ -149,6 +145,8 @@
     
     let uName = ""; let uFullKey = ""; let uMail = "";
     let selectedItemForTransfer = null;
+    let currentUrunler = [];
+    let myDepoBarkodlar = [];
 
     const aracMap = {
         "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
@@ -206,7 +204,7 @@
                 b.innerHTML = `
                 <tr class="${isD?'row-done':(isOnay?'row-onay':'row-waiting')}">
                     <td>${d.yer}</td>
-                    <td><b>${d.urun}</b><br><small>${d.barkod}</small></td>
+                    <td><b>${d.urun}</b><br><small style="color:#555;">[${d.barkod}]</small></td>
                     <td>${d.gonderen}</td>
                     <td><input type="number" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})" value="${d.kp||''}"></td>
                     <td>${actionHtml}</td>
@@ -215,11 +213,13 @@
         });
         db.ref('depolar').on('value', snap => {
             const c = document.getElementById('depoExList'); c.innerHTML = "";
+            myDepoBarkodlar = [];
             snap.forEach(d => {
                 const isMyDepo = d.key === uFullKey;
                 let rws = ""; 
                 d.forEach(r => { 
                     const v = r.val(); 
+                    if(isMyDepo) myDepoBarkodlar.push(String(v.barkod).trim());
                     rws += `<tr class="${isMyDepo?'depo-row':''}" onclick="${isMyDepo?`openTransferModal('${v.urun}','${v.barkod}')`:''}">
                         <td>${v.urun}</td>
                         <td>${v.barkod}</td>
@@ -233,10 +233,17 @@
 
     function manualAdd() {
         const n = prompt("Yeni Şube/Lokasyon İsmi (Kod ile birlikte)?");
-        if(n) db.ref('ayarlar/sube_listesi').push(n);
+        if(!n) return;
+        const searchVal = n.toLocaleUpperCase('tr-TR').trim();
+        const all = [...staticSubeler, ...dynamicSubeler].map(s => s.toLocaleUpperCase('tr-TR').trim());
+        
+        if(all.includes(searchVal)) {
+            alert("HATA: '" + n + "' zaten listede mevcut!");
+            return;
+        }
+        db.ref('ayarlar/sube_listesi').push(n);
     }
 
-    /* Depo üzerinden Transfer İşlemleri */
     function openTransferModal(urun, barkod) {
         selectedItemForTransfer = { urun, barkod };
         document.getElementById('transfer-item-title').innerText = "Gönder: " + urun + " (" + barkod + ")";
@@ -298,37 +305,79 @@
     }
 
     function updateAllSelects() {
-        db.ref('ayarlar/urun_listesi').once('value', snap => {
-            let list = ["Cüzdan yazıcı","Pc","Tarayıcı","Monitör","Ip telefon","Switch","Router","Sunucu","Nvr","Laptop","Lazer yazıcı","Kamera"];
-            snap.forEach(i => { if(!list.includes(i.val())) list.push(i.val()); });
-            document.querySelectorAll('.urun-select').forEach(sel => {
-                const old = sel.value;
-                let h = ""; list.forEach(u => h += `<option value="${u}">${u}</option>`);
-                sel.innerHTML = h + `<option value="ADD_NEW" style="color:#217346; font-weight:bold;">➕ YENİ ENVANTER EKLE</option>`;
-                if(old && list.includes(old)) sel.value = old;
-            });
+        let list = currentUrunler;
+        document.querySelectorAll('.urun-select').forEach(sel => {
+            const old = sel.value;
+            let h = ""; list.forEach(u => h += `<option value="${u}">${u}</option>`);
+            sel.innerHTML = h + `<option value="ADD_NEW" style="color:#217346; font-weight:bold;">➕ YENİ ENVANTER EKLE</option>`;
+            if(old && list.includes(old)) sel.value = old;
         });
     }
 
     function checkNewUrun(sel) {
         if(sel.value === "ADD_NEW") {
             const n = prompt("Yeni Envanter İsmi?");
-            if(n) { db.ref('ayarlar/urun_listesi').push(n); setTimeout(() => sel.value = n, 500); } else sel.selectedIndex = 0;
+            if(!n) { sel.selectedIndex = 0; return; }
+            
+            const searchVal = n.toLocaleUpperCase('tr-TR').trim();
+            const existing = currentUrunler.map(u => u.toLocaleUpperCase('tr-TR').trim());
+            
+            if(existing.includes(searchVal)) {
+                alert("HATA: '" + n + "' zaten listede mevcut!");
+                // Mevcut olanın gerçek adını listeden bulup seçelim
+                const realName = currentUrunler.find(u => u.toLocaleUpperCase('tr-TR').trim() === searchVal);
+                sel.value = realName;
+                return;
+            }
+            db.ref('ayarlar/urun_listesi').push(n); 
+            setTimeout(() => sel.value = n, 500);
         }
     }
 
     function saveAllEx() {
         const target = document.getElementById('target-sube').value;
+        const isToMyTruck = document.getElementById('to-my-truck').checked;
+        
         if(!target || target === "Hedef Şube Seçin") return alert("Lütfen bir şube seçin!");
+        
+        let savedCount = 0;
+        let skippedCount = 0;
+
         document.querySelectorAll('.excel-row-container').forEach(row => {
-            const b = row.querySelector('.barkod-input').value;
+            const b = String(row.querySelector('.barkod-input').value).trim();
+            const u = row.querySelector('.urun-select').value;
+            const t = row.querySelector('.type-select').value;
+            
             if(b) {
-                const data = { gonderen: uName, yer: target, tip: row.querySelector('.type-select').value, barkod: b, urun: row.querySelector('.urun-select').value, status: "BEKLEMEDE", kp: "", saat: new Date().toLocaleTimeString('tr-TR'), gonderen_kod: uFullKey };
-                db.ref('transferler/canli_akis').push(data);
-                if(document.getElementById('to-my-truck').checked) db.ref('depolar/' + uFullKey).push({ urun: data.urun, barkod: data.barkod });
+                // Mükerrer barkod kontrolü (Kendi aracına atıyorsa)
+                if(isToMyTruck && myDepoBarkodlar.includes(b)) {
+                    skippedCount++;
+                    return; 
+                }
+
+                const data = { gonderen: uName, yer: target, tip: t, barkod: b, urun: u, status: "BEKLEMEDE", kp: "", saat: new Date().toLocaleTimeString('tr-TR'), gonderen_kod: uFullKey };
+                
+                if(isToMyTruck) {
+                    db.ref('depolar/' + uFullKey).push({ urun: data.urun, barkod: data.barkod });
+                } else {
+                    db.ref('transferler/canli_akis').push(data);
+                }
+                savedCount++;
             }
         });
-        document.getElementById('items-container').innerHTML = ""; addRowEx("GİRİŞ"); addRowEx("ÇIKIŞ");
+
+        if(savedCount > 0) {
+            let msg = isToMyTruck ? "Ürünler aracınıza yüklendi." : "Akışa gönderildi.";
+            if(skippedCount > 0) msg += "\n(Not: " + skippedCount + " adet mükerrer barkod atlandı)";
+            alert(msg);
+            document.getElementById('items-container').innerHTML = ""; 
+            addRowEx("GİRİŞ"); 
+            addRowEx("ÇIKIŞ");
+        } else if(skippedCount > 0) {
+            alert("HATA: Girilen tüm barkodlar zaten aracınızda mevcut!");
+        } else {
+            alert("Lütfen en az bir barkod girin!");
+        }
     }
 
     function openModal() { document.getElementById('sube-modal').style.display = 'block'; filterSubeler(); }
@@ -347,6 +396,7 @@
     function toggleTruckMode() {
         const isT = document.getElementById('to-my-truck').checked;
         document.getElementById('target-sube').value = isT ? uFullKey : "";
+        document.getElementById('target-sube').style.opacity = isT ? "0.5" : "1";
     }
 
     function updateSubeCounter() {
