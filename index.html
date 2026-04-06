@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v74</title>
+    <title>S016 Depo Takip v75</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -85,7 +85,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016_DEPO_TAKIP_v74.xlsx</div>
+    <div style="font-weight:bold;">S016_DEPO_TAKIP_v75.xlsx</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -234,14 +234,15 @@
     function manualAdd() {
         const n = prompt("Yeni Şube/Lokasyon İsmi (Kod ile birlikte)?");
         if(!n) return;
-        const searchVal = n.toLocaleUpperCase('tr-TR').trim();
-        const all = [...staticSubeler, ...dynamicSubeler].map(s => s.toLocaleUpperCase('tr-TR').trim());
+        const inputSube = n.toLocaleUpperCase('tr-TR').trim();
+        // Hem statik hem dinamik listeyi büyük harfle kontrol et
+        const allSubeler = [...staticSubeler, ...dynamicSubeler].map(s => s.toLocaleUpperCase('tr-TR').trim());
         
-        if(all.includes(searchVal)) {
-            alert("HATA: '" + n + "' zaten listede mevcut!");
+        if(allSubeler.includes(inputSube)) {
+            alert("HATA: '" + inputSube + "' zaten listede mevcut!");
             return;
         }
-        db.ref('ayarlar/sube_listesi').push(n);
+        db.ref('ayarlar/sube_listesi').push(n.trim());
     }
 
     function openTransferModal(urun, barkod) {
@@ -319,17 +320,17 @@
             const n = prompt("Yeni Envanter İsmi?");
             if(!n) { sel.selectedIndex = 0; return; }
             
-            const searchVal = n.toLocaleUpperCase('tr-TR').trim();
-            const existing = currentUrunler.map(u => u.toLocaleUpperCase('tr-TR').trim());
+            const inputUrun = n.toLocaleUpperCase('tr-TR').trim();
+            const existingUrunler = currentUrunler.map(u => u.toLocaleUpperCase('tr-TR').trim());
             
-            if(existing.includes(searchVal)) {
-                alert("HATA: '" + n + "' zaten listede mevcut!");
-                // Mevcut olanın gerçek adını listeden bulup seçelim
-                const realName = currentUrunler.find(u => u.toLocaleUpperCase('tr-TR').trim() === searchVal);
-                sel.value = realName;
+            if(existingUrunler.includes(inputUrun)) {
+                alert("HATA: '" + inputUrun + "' zaten listede mevcut!");
+                // Mevcut olanı bul ve seç
+                const originalName = currentUrunler.find(u => u.toLocaleUpperCase('tr-TR').trim() === inputUrun);
+                sel.value = originalName;
                 return;
             }
-            db.ref('ayarlar/urun_listesi').push(n); 
+            db.ref('ayarlar/urun_listesi').push(n.trim()); 
             setTimeout(() => sel.value = n, 500);
         }
     }
@@ -341,7 +342,7 @@
         if(!target || target === "Hedef Şube Seçin") return alert("Lütfen bir şube seçin!");
         
         let savedCount = 0;
-        let skippedCount = 0;
+        let duplicateCount = 0;
 
         document.querySelectorAll('.excel-row-container').forEach(row => {
             const b = String(row.querySelector('.barkod-input').value).trim();
@@ -349,9 +350,9 @@
             const t = row.querySelector('.type-select').value;
             
             if(b) {
-                // Mükerrer barkod kontrolü (Kendi aracına atıyorsa)
+                // Aracıma transferde mükerrer barkod kontrolü
                 if(isToMyTruck && myDepoBarkodlar.includes(b)) {
-                    skippedCount++;
+                    duplicateCount++;
                     return; 
                 }
 
@@ -367,14 +368,14 @@
         });
 
         if(savedCount > 0) {
-            let msg = isToMyTruck ? "Ürünler aracınıza yüklendi." : "Akışa gönderildi.";
-            if(skippedCount > 0) msg += "\n(Not: " + skippedCount + " adet mükerrer barkod atlandı)";
-            alert(msg);
+            let info = isToMyTruck ? "Ürünler aracınıza kaydedildi." : "Kayıtlar başarıyla akışa gönderildi.";
+            if(duplicateCount > 0) info += "\n(Not: " + duplicateCount + " adet mükerrer barkod depoda olduğu için atlandı.)";
+            alert(info);
             document.getElementById('items-container').innerHTML = ""; 
             addRowEx("GİRİŞ"); 
             addRowEx("ÇIKIŞ");
-        } else if(skippedCount > 0) {
-            alert("HATA: Girilen tüm barkodlar zaten aracınızda mevcut!");
+        } else if(duplicateCount > 0) {
+            alert("HATA: Girdiğiniz tüm barkodlar zaten aracınızın deposunda mevcut!");
         } else {
             alert("Lütfen en az bir barkod girin!");
         }
