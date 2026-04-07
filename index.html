@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v72.8</title>
+    <title>S016 Depo Takip v72.9</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -11,8 +11,10 @@
     
     <style>
         :root { --excell-green: #217346; --border: #d4d4d4; --bg: #f3f3f3; }
-        .bg-in { background-color: #d9e9f3 !important; color: #0078d4 !important; font-weight: bold; }
-        .bg-out { background-color: #f8dbdb !important; color: #d83b01 !important; font-weight: bold; }
+        /* 1. DÜZELTME: RENKLER GÜNCELLENDİ */
+        .bg-in { background-color: #f8dbdb !important; color: #d83b01 !important; font-weight: bold; } /* AL - ARIZALI (KIRMIZI) */
+        .bg-out { background-color: #d9e9f3 !important; color: #0078d4 !important; font-weight: bold; } /* VER - SAĞLAM (MAVİ) */
+        
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; font-size: 11px; }
         body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
@@ -44,17 +46,17 @@
         .bg-onay { background: #ff9800; }
         .bg-done { background: #28a745; }
 
-        /* YENI: Kamera ve Büyüteç Tasarımı */
         .scan-container { position: relative; display: flex; align-items: center; flex: 2; height: 44px; }
         .barkod-input { width: 100%; height: 100%; border: none; border-right: 1px solid #ccc; padding: 0 30px 0 10px; font-size: 13px; outline: none; }
         .kp-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
         .kp-input-large { width: 100%; border: 1px solid #ddd; padding: 4px 25px 4px 4px; border-radius: 2px; height: 26px; font-size: 10px; }
         .magnifier-btn { position: absolute; right: 5px; cursor: pointer; font-size: 14px; color: var(--excell-green); user-select: none; }
         
-        /* YENI: Kamera Modal Penceresi */
         #camera-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:3000; padding:10px; flex-direction:column; justify-content:center; }
         #reader { width:100%; max-width:400px; margin:auto; background:white; border-radius:8px; overflow:hidden; }
         #camera-close-btn { width:40px; height:40px; background:white; border-radius:50%; color:red; font-size:24px; font-weight:bold; border:none; position:absolute; top:20px; right:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px rgba(0,0,0,0.3); }
+        /* 3. DÜZELTME: FLASH BUTONU TASARIMI */
+        #flash-btn { width:40px; height:40px; background:white; border-radius:50%; color:#333; font-size:20px; border:none; position:absolute; top:20px; left:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px rgba(0,0,0,0.3); }
 
         .excel-row-container { display: flex; border: 1px solid #ccc; background: #fff; margin-bottom: 3px; min-height: 44px; align-items: center; border-radius: 4px; overflow: hidden; }
         .type-select { width: 60px; height: 44px; border: none; border-right: 1px solid #ccc; font-weight: bold; text-align: center; outline: none; }
@@ -98,12 +100,13 @@
 </div>
 
 <div id="camera-modal">
+    <button id="flash-btn" onclick="toggleFlash()">🔦</button>
     <button id="camera-close-btn" onclick="stopScannerEx()">×</button>
     <div id="reader"></div>
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016_DEPO_TAKIP_v72.8</div>
+    <div style="font-weight:bold;">S016_DEPO_TAKIP_v72.9</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -138,9 +141,6 @@
     </div>
     
     <div id="p-depo" class="app-page" style="display:none;">
-        <div style="background:#fff3cd; padding:8px; border:1px solid #ffeeba; margin-bottom:10px; border-radius:4px; font-weight:bold; text-align:center;">
-            💡 Ürünü göndermek için kendi araç deponuzdan ürünün üzerine dokunun!
-        </div>
         <div id="depoExList"></div>
     </div>
 </div>
@@ -166,9 +166,8 @@
     
     let uName = ""; let uFullKey = ""; let uMail = "";
     let selectedItemForTransfer = null;
-    
-    // YENI: Kamera Tarama Değişkeni
     let html5QrcodeScannerEx = null;
+    let flashOn = false; // Fener durumu
 
     const aracMap = {
         "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
@@ -181,48 +180,47 @@
     const staticSubeler = ["S016 İZMİR SAHA DEPO", "68 BERGAMA/İZMİR ŞUBESİ","137 İZMİR ŞUBESİ","138 URLA/İZMİR ŞUBESİ","139 BAYINDIR/İZMİR ŞUBESİ","140 TİRE/İZMİR ŞUBESİ","141 ÇEŞME/İZMİR ŞUBESİ","142 SEFERİHİSAR/İZMİR ŞUBESİ","143 KARABURUN/İZMİR ŞUBESİ","145 KEMALPAŞA/İZMİR ŞUBESİ","146 MENEMEN/İZMİR ŞUBESİ","188 MANİSA ŞUBESİ","189 AKHİSAR/MANİSA ŞUBESİ","190 ALAŞEHİR/MANİSA ŞUBESİ","191 DEMİRCİ/MANİSA ŞUBESİ","192 SALİHLİ/MANİSA ŞUBESİ","193 SOMA/MANİSA ŞUBESİ","194 KIRKAĞAÇ/MANİSA ŞUBESİ","195 TURGUTLU/MANİSA ŞUBESİ","196 KULA/MANİSA ŞUBESİ","197 GÖRDES/MANİSA ŞUBESİ","221 ÖDEMİŞ/İZMİR ŞUBESİ","317 TORBALI/İZMİR ŞUBESİ","344 FOÇA/İZMİR ŞUBESİ","386 KINIK/İZMİR ŞUBESİ","387 DİKİLİ/İZMİR ŞUBESİ","410 ÇANKAYA/İZMİR ŞUBESİ","411 KARŞIYAKA/İZMİR ŞUBESİ","422 KİRAZ/İZMİR ŞUBESİ","561 SELÇUK/İZMİR ŞUBESİ","562 SELENDİ/MANİSA ŞUBESİ","572 SARIGÖL/MANİSA ŞUBESİ","590 ALAÇATI-ÇEŞME/İZMİR ŞUBESİ","615 BORNOVA/İZMİR ŞUBESİ","622 SARUHANLI/MANİSA ŞUBESİ","678 EŞREFPAŞA/İZMİR ŞUBESİ","711 BUCA/İZMİR ŞUBESİ","712 ALSANCAK/İZMİR ŞUBESİ","714 ALİAĞA/İZMİR ŞUBESİ","726 NARLIDERE/İZMİR ŞUBESİ","730 AHMETLİ/MANİSA ŞUBESİ","735 GÖLMARMARA/MANİSA ŞUBESİ","776 KONAK/İZMİR ŞUBESİ","791 MENDERES/İZMİR ŞUBESİ","800 ÇİĞLİ/İZMİR ŞUBESİ","803 BAYRAKLI/İZMİR ŞUBESİ","804 HATAY/İZMİR ŞUBESİ","807 GÖZTEPE/İZMİR ŞUBESİ","808 BALÇOVA/İZMİR ŞUBESİ","812 KARABAĞLAR/İZMİR ŞUBESİ","814 ÜÇYOL/İZMİR ŞUBESİ","869 KÖPRÜBAŞI/MANİSA ŞUBESİ","884 26 AĞUSTOS/İZMİR ŞUBESİ","902 ŞİRİNYER/İZMİR ŞUBESİ","904 ŞEMİKLER/İZMİR ŞUBESİ","911 ALTINDAĞ/İZMİR ŞUBESİ","928 GÜMÜŞPALA/İZMİR ŞUBESİ","934 DENİZBOSTANLI/İZMİR ŞUBESİ","974 GÜMÜLDÜR-MENDERES/İZMİR ŞUBESİ","975 MTK ÇARŞI/İZMİR ŞUBESİ","999 ÇAMDİBİ/İZMİR ŞUBESİ","1000 GAZİEMİR/İZMİR ŞUBESİ","1021 BEYDAĞ/İZMİR ŞUBESİ","1043 YEŞİLYURT/İZMİR ŞUBESİ","1089 ALAYBEY/İZMİR ŞUBESİ","1203 ÜÇKUYULAR/İZMİR ŞUBESİ","1204 KAHRAMANLAR/İZMİR ŞUBESİ","1256 MESİR/MANİSA ŞUBESİ","1333 EFES/İZMİR ŞUBESİ","1403 KAZIMDİRİK/İZMİR ŞUBESİ","1446 EGE TIP/İZMİR ŞUBESİ","1506 9 EYLÜL ÜNİVERSİTESİ/İZMİR ŞUBESİ","1533 FAHRETTİN ALTAY/İZMİR ŞUBESİ","1625 GÜZELBAHÇE/İZMİR ŞUBESİ","1743 IŞIKKENT/İZMİR ŞUBESİ","1750 İZMİR PARA GRUP MERKEZİ","1751 İZMİR KURUMSAL ŞUBE","1768 ATATÜRK OSB/İZMİR TİCARİ ŞUBE","1778 YENİ GIDA ÇARŞISI/İZMİR ŞUBESİ","1815 İZMİR BÖLGE YÖNETİCİLİĞİ - KONAK","1816 İZMİR BÖLGE YÖNETİCİLİĞİ - KARŞIYAKA","1840 MANİSA BÖLGE YÖNETİCİLİĞİ","1903 GİRNE BULVARI/İZMİR ŞUBESİ","1938 MANİSA TİCARİ ŞUBE","1958 KARABAĞLAR/İZMİR TİCARİ ŞUBE","1961 BOZYAKA/İZMİR ŞUBESİ","1972 AYRANCILAR/İZMİR ŞUBESİ","1984 MANAVKUYU/İZMİR ŞUBESİ","1987 YENİŞAKRAN-ALİAĞA/İZMİR ŞUBESİ","1992 GEDİZ MAHALLESİ/İZMİR ŞUBESİ","1993 YIKIKKEMER/İZMİR ŞUBESİ","2081 YENİ GİRNE/İZMİR ŞUBESİ","2088 ŞEHİTLER/MANİSA ŞUBESİ","2129 ATAKENT/İZMİR ŞUBESİ","2137 OSMANGAZİ-BAYRAKLI/İZMİR ŞUBESİ","2152 ATAŞEHİR/İZMİR ŞUBESİ","2159 İZMİR CADDESİ/MANİSA ŞUBESİ","2170 HASAN TAHSİN-BUCA/İZMİR ŞUBESİ","2267 KEMALPAŞA/İZMİR TİCARİ ŞUBE","2319 CUMHURİYET-SALİHLİ/MANİSA ŞUBESİ","2335 BORNOVA ATA/İZMİR ŞUBESİ","2408 ŞEHZADELER/MANİSA ŞUBESİ","2425 SEYDİKÖY-GAZİEMİR/İZMİR ŞUBESİ","2436 MENDERES CADDESİ/İZMİR ŞUBESİ","2474 ÇAĞLAK-AKHİSAR/MANİSA ŞUBESİ","2477 ULUKENT-MENEMEN/İZMİR ŞUBESİ","2494 4.SANAYİ SİTESİ/İZMİR ŞUBESİ","2496 ULUS MEYDANI-ÖDEMİŞ/İZMİR ŞUBESİ","2504 7 EYLÜL-TURGUTLU/MANİSA ŞUBESİ","2514 ÇANDARLI-DİKİLİ/İZMİR ŞUBESİ","2515 1.SANAYİ/İZMİR ŞUBESİ","2566 ERTUĞRUL MAHALLESİ-TORBALI/İZMİR ŞUBESİ","2630 YEŞİLOVA-BORNOVA/İZMİR ŞUBESİ","2642 YUNUSEMRE/MANİSA ŞUBESİ","2673 BAKIRÇAY-BERGAMA/İZMİR ŞUBESİ","2697 ATATÜRK HASTANESİ/İZMİR ŞUBESİ"];
     let dynamicSubeler = [];
     
-    // YENI: Kamera Tarama Fonksiyonları
+    // 2. DÜZELTME: KAMERA OKUMA VE YAZMA MANTIĞI
     function startScannerEx(targetInputId) {
         document.getElementById('camera-modal').style.display = 'flex';
         html5QrcodeScannerEx = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
-        
+        flashOn = false;
+
         html5QrcodeScannerEx.start(
-            { facingMode: "environment" }, // Arka kamerayı kullan
-            config,
-            (decodedText, decodedResult) => {
-                // Başarılı okuma
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 150 } },
+            (decodedText) => {
                 const input = document.getElementById(targetInputId);
-                input.value = decodedText;
-                
-                // Eğer Akış tablosundaki KP hücresi ise Firebase'i de güncelle
-                if(targetInputId.startsWith('kp-')) {
-                    const dbKey = targetInputId.replace('kp-', '');
-                    db.ref('transferler/canli_akis/' + dbKey).update({kp: decodedText});
+                if(input) {
+                    input.value = decodedText;
+                    // Eğer Akış tablosundaki KP hücresi ise Firebase'i de güncelle
+                    if(targetInputId.startsWith('kp-')) {
+                        const dbKey = targetInputId.replace('kp-', '');
+                        db.ref('transferler/canli_akis/' + dbKey).update({kp: decodedText});
+                    }
                 }
-                
-                // Başarı sesi çal (İsteğe bağlı, kütüphaneden)
-                
-                // Kamerayı durdur ve kapat
                 stopScannerEx();
-            },
-            (errorMessage) => {
-                // Okuma hatası (genelde görmezden gelinir)
             }
-        ).catch((err) => {
-            alert("Kamera başlatılamadı: " + err);
-            stopScannerEx();
+        ).catch(err => { alert("Kamera hatası: " + err); stopScannerEx(); });
+    }
+
+    // 3. DÜZELTME: FLASH KONTROLÜ
+    function toggleFlash() {
+        if (!html5QrcodeScannerEx) return;
+        flashOn = !flashOn;
+        html5QrcodeScannerEx.applyVideoConstraints({
+            advanced: [{ torch: flashOn }]
+        }).catch(() => {
+            alert("Cihazınız fener özelliğini desteklemiyor olabilir.");
         });
     }
-    
+
     function stopScannerEx() {
         if(html5QrcodeScannerEx) {
             html5QrcodeScannerEx.stop().then(() => {
                 html5QrcodeScannerEx = null;
                 document.getElementById('camera-modal').style.display = 'none';
-            }).catch((err) => {
-                console.log("Kamera durdurma hatası:", err);
-                // Zorla kapat
+            }).catch(() => {
                 html5QrcodeScannerEx = null;
                 document.getElementById('camera-modal').style.display = 'none';
             });
@@ -260,9 +258,7 @@
     }
 
     function init() {
-        db.ref('ayarlar/urun_listesi').on('value', snap => {
-            updateAllSelects();
-        });
+        db.ref('ayarlar/urun_listesi').on('value', snap => { updateAllSelects(); });
         db.ref('ayarlar/sube_listesi').on('value', snap => {
             let list = []; snap.forEach(i => list.push(i.val()));
             dynamicSubeler = list; updateSubeCounter();
@@ -285,7 +281,6 @@
                     actionHtml = `<button class="btn-status ${isD?'bg-done':'bg-waiting'}" onclick="db.ref('transferler/canli_akis/${key}').update({status:('${d.status}'==='BEKLEMEDE'?'YAPILDI':'BEKLEMEDE')})">${isD?'TAMAMLANDI':'BEKLİYOR'}</button>`;
                 }
 
-                // Akış Ekranı KP Bölümü (AL ise büyüteçli)
                 let kpCell = "";
                 if(isPassiveKP) {
                     kpCell = `<input type="text" class="kp-input-large" readonly style="background:#eee; border:none; color:#666;" value="${d.kp||''}">`;
@@ -329,6 +324,7 @@
         const rowId = 'brk-' + Math.random().toString(36).substr(2, 9);
         const div = document.createElement('div'); 
         div.className = "excel-row-container";
+        // 1. DÜZELTME: RENK SINIFLARI GÜNCEL
         div.innerHTML = `
             <select class="type-select ${type==='ÇIKIŞ'?'bg-out':'bg-in'}" onchange="this.classList.toggle('bg-out', this.value==='ÇIKIŞ'); this.classList.toggle('bg-in', this.value==='GİRİŞ')">
                 <option value="GİRİŞ" ${type==='GİRİŞ'?'selected':''}>AL</option>
@@ -344,7 +340,6 @@
         updateAllSelects();
     }
 
-    // Modal ve Diğer Yardımcı Fonksiyonlar (Orijinal haliyle korundu)
     function manualAdd() { const n = prompt("Yeni Şube/Lokasyon İsmi (Kod ile birlikte)?"); if(n) db.ref('ayarlar/sube_listesi').push(n); }
     function openTransferModal(urun, barkod) { selectedItemForTransfer = { urun, barkod }; document.getElementById('transfer-item-title').innerText = "Gönder: " + urun + " (" + barkod + ")"; document.getElementById('transfer-modal').style.display = 'block'; filterTransferList(); }
     function closeTransferModal() { document.getElementById('transfer-modal').style.display = 'none'; selectedItemForTransfer = null; }
