@@ -167,7 +167,6 @@
     let html5QrcodeScannerEx = null;
     let flashOn = false;
     
-    // GÜNCELLEME: Taslakları tuttuğumuz obje
     let mailTaslaklari = {};
 
     const aracMap = {
@@ -294,33 +293,41 @@
         }
     }
 
-    // GÜNCELLEME: Her ortama (özellikle webview) uyumlu kopyalama fonksiyonu
-    function kopyalaTaslak(yer) {
+    function deleteAkisItem(key) {
+        if(confirm("Bu transfer kaydını silmek istediğinize emin misiniz?")) {
+            db.ref('transferler/canli_akis/' + key).remove();
+        }
+    }
+
+    // GÜNCELLEME: MDM engellerini aşan "Kopyala ve Mail Aç" fonksiyonu
+    function kopyalaVeMailAc(yer) {
         const metin = mailTaslaklari[yer];
         if(!metin) return;
 
-        // Görünmez bir textarea oluşturup metni içine atıyoruz (Eski cihaz ve WebView'lar için en kesin yöntem)
+        // 1. Önce listeyi panoya (hafızaya) kopyala
         const textArea = document.createElement("textarea");
         textArea.value = metin;
-        // Ekranın dışına taşıyarak kullanıcının görmesini engelliyoruz
         textArea.style.top = "0";
         textArea.style.left = "0";
         textArea.style.position = "fixed";
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-
+        
+        let basarili = false;
         try {
-            const basarili = document.execCommand('copy');
-            if(basarili) {
-                alert("Metin panoya kopyalandı! İş profilindeki Boxer'a girip direkt yapıştırabilirsiniz.");
-            } else {
-                alert("Kopyalama başarısız oldu.");
-            }
-        } catch (err) {
-            alert("Kopyalama işlemi bu tarayıcıda desteklenmiyor.");
-        }
+            basarili = document.execCommand('copy');
+        } catch (err) {}
         document.body.removeChild(textArea);
+
+        // 2. Kullanıcıyı uyar ve sadece boş konulu bir mail tetikle
+        if (basarili) {
+            alert("✅ LİSTE KOPYALANDI!\n\nŞimdi mail uygulamanız açılacak. Lütfen e-posta metin alanına basılı tutup 'Yapıştır' diyerek listeyi ekleyin.");
+        }
+        
+        // 3. İçinde veri (body) barındırmadığı için güvenlik duvarına takılmayan temiz mail linki
+        const subject = encodeURIComponent(yer + " Transfer Bilgilendirmesi");
+        window.location.href = "mailto:?subject=" + subject;
     }
 
     function init() {
@@ -399,19 +406,11 @@
 
                 mailTaslaklari[yer] = mailBodyContent;
 
-                const mailSubject = encodeURIComponent(`${yer} Transfer Bilgilendirmesi`);
-                const mailBody = encodeURIComponent(mailBodyContent);
-                const boxerLink = `boxer://mailto:?subject=${mailSubject}&body=${mailBody}`;
-
-                // GÜNCELLEME: Kopyala ve Mail At butonları yan yana eklendi
                 fullHtml += `
                 <div style="margin-bottom:15px; border:1px solid var(--excell-green); border-radius:4px; overflow:hidden; background:#fff;">
                     <div style="background:var(--excell-green); color:white; padding:8px 10px; font-weight:bold; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
                         <span>🏢 ${yer}</span>
-                        <div style="display:flex; gap:5px;">
-                            <button onclick="kopyalaTaslak('${yer}')" style="background:#fff3cd; color:#856404; padding:4px 8px; border-radius:3px; border:none; font-size:10px; font-weight:bold; cursor:pointer;">📋 KOPYALA</button>
-                            <a href="${boxerLink}" style="background:white; color:var(--excell-green); padding:4px 8px; border-radius:3px; text-decoration:none; font-size:10px; cursor:pointer; font-weight:bold;">✉️ MAİL AT</a>
-                        </div>
+                        <button onclick="kopyalaVeMailAc('${yer}')" style="background:white; color:var(--excell-green); padding:5px 10px; border-radius:4px; border:none; font-weight:bold; font-size:11px; cursor:pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">📋 KOPYALA & MAİL AÇ</button>
                     </div>
                     <table class="excel-table" style="border:none;">
                         <thead>
