@@ -43,10 +43,12 @@
         .row-onay { background-color: #fff3cd !important; }
         .row-done { background-color: #d4edda !important; color: #444; }
         
-        .btn-status { width: 100%; padding: 8px 2px; border: none; border-radius: 3px; font-weight: bold; color: white; font-size: 10px; }
+        .btn-status { width: 100%; padding: 8px 2px; border: none; border-radius: 3px; font-weight: bold; color: white; font-size: 10px; cursor: pointer; }
         .bg-waiting { background: #dc3545; }
         .bg-onay { background: #ff9800; }
         .bg-done { background: #28a745; }
+
+        .btn-delete { background: #dc3545; color: white; border: none; border-radius: 3px; font-weight: bold; width: 100%; padding: 8px 0; cursor: pointer; font-size: 10px; }
 
         .excel-row-container { display: flex; border: 1px solid #ccc; background: #fff; margin-bottom: 3px; min-height: 44px; align-items: center; border-radius: 4px; overflow: hidden; }
         .type-select { width: 60px; height: 44px; border: none; border-right: 1px solid #ccc; font-weight: bold; text-align: center; outline: none; }
@@ -164,6 +166,9 @@
     let selectedItemForTransfer = null;
     let html5QrcodeScannerEx = null;
     let flashOn = false;
+    
+    // GÜNCELLEME: Taslakları tuttuğumuz obje
+    let mailTaslaklari = {};
 
     const aracMap = {
         "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
@@ -289,6 +294,35 @@
         }
     }
 
+    // GÜNCELLEME: Her ortama (özellikle webview) uyumlu kopyalama fonksiyonu
+    function kopyalaTaslak(yer) {
+        const metin = mailTaslaklari[yer];
+        if(!metin) return;
+
+        // Görünmez bir textarea oluşturup metni içine atıyoruz (Eski cihaz ve WebView'lar için en kesin yöntem)
+        const textArea = document.createElement("textarea");
+        textArea.value = metin;
+        // Ekranın dışına taşıyarak kullanıcının görmesini engelliyoruz
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+            const basarili = document.execCommand('copy');
+            if(basarili) {
+                alert("Metin panoya kopyalandı! İş profilindeki Boxer'a girip direkt yapıştırabilirsiniz.");
+            } else {
+                alert("Kopyalama başarısız oldu.");
+            }
+        } catch (err) {
+            alert("Kopyalama işlemi bu tarayıcıda desteklenmiyor.");
+        }
+        document.body.removeChild(textArea);
+    }
+
     function init() {
         db.ref('ayarlar/urun_listesi').on('value', snap => { updateAllSelects(); });
         db.ref('ayarlar/sube_listesi').on('value', snap => {
@@ -319,6 +353,8 @@
 
             locationOrder.forEach(yer => {
                 let rowsHtml = "";
+                let mailBodyContent = `Lokasyon: ${yer}\n\nTransfer Listesi:\n-------------------------\n`; 
+
                 groupedData[yer].forEach(item => {
                     const key = item.key;
                     const d = item.d;
@@ -333,7 +369,6 @@
                             ? `<button class="btn-status bg-onay" onclick="approveTransfer('${key}')">KABUL ET</button>`
                             : `<span style="color:orange; font-weight:bold;">ONAYDA</span>`;
                     } else {
-                        // METİN DEĞİŞİKLİĞİ: "EDİLDİ" tekrar "YAPILDI" oldu
                         actionHtml = `<button class="btn-status ${isD?'bg-done':'bg-waiting'}" onclick="db.ref('transferler/canli_akis/${key}').update({status:('${d.status}'==='BEKLEMEDE'?'YAPILDI':'BEKLEMEDE')})">${isD?'YAPILDI':'BEKLİYOR'}</button>`;
                     }
 
@@ -349,6 +384,9 @@
                     }
 
                     const checkMark = isD ? ' <span style="font-size:12px;">✅</span>' : '';
+                    const durumMetni = isD ? "YAPILDI" : "BEKLİYOR";
+                    
+                    mailBodyContent += `📦 Ürün: ${d.urun}\n🔖 Barkod: ${d.barkod}\n👤 Gönderen/Asistan: ${d.gonderen}\nDurum: ${durumMetni}\n\n`;
 
                     rowsHtml += `
                     <tr class="${isD?'row-done':(isOnay?'row-onay':'row-waiting')}">
@@ -359,10 +397,21 @@
                     </tr>`;
                 });
 
+                mailTaslaklari[yer] = mailBodyContent;
+
+                const mailSubject = encodeURIComponent(`${yer} Transfer Bilgilendirmesi`);
+                const mailBody = encodeURIComponent(mailBodyContent);
+                const boxerLink = `boxer://mailto:?subject=${mailSubject}&body=${mailBody}`;
+
+                // GÜNCELLEME: Kopyala ve Mail At butonları yan yana eklendi
                 fullHtml += `
                 <div style="margin-bottom:15px; border:1px solid var(--excell-green); border-radius:4px; overflow:hidden; background:#fff;">
-                    <div style="background:var(--excell-green); color:white; padding:8px 10px; font-weight:bold; font-size:12px;">
-                        🏢 ${yer}
+                    <div style="background:var(--excell-green); color:white; padding:8px 10px; font-weight:bold; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>🏢 ${yer}</span>
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="kopyalaTaslak('${yer}')" style="background:#fff3cd; color:#856404; padding:4px 8px; border-radius:3px; border:none; font-size:10px; font-weight:bold; cursor:pointer;">📋 KOPYALA</button>
+                            <a href="${boxerLink}" style="background:white; color:var(--excell-green); padding:4px 8px; border-radius:3px; text-decoration:none; font-size:10px; cursor:pointer; font-weight:bold;">✉️ MAİL AT</a>
+                        </div>
                     </div>
                     <table class="excel-table" style="border:none;">
                         <thead>
