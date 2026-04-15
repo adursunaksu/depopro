@@ -167,6 +167,7 @@
     let html5QrcodeScannerEx = null;
     let flashOn = false;
     
+    // GÜNCELLEME: Taslakları tuttuğumuz obje (Artık içine HTML tablosu kaydedeceğiz)
     let mailTaslaklari = {};
 
     const aracMap = {
@@ -299,33 +300,42 @@
         }
     }
 
-    // GÜNCELLEME: MDM engellerini aşan "Kopyala ve Mail Aç" fonksiyonu
+    // GÜNCELLEME: Zengin Metin (Rich Text HTML) Tablosunu Kopyalayan Fonksiyon
     function kopyalaVeMailAc(yer) {
-        const metin = mailTaslaklari[yer];
-        if(!metin) return;
+        const htmlMetin = mailTaslaklari[yer];
+        if(!htmlMetin) return;
 
-        // 1. Önce listeyi panoya (hafızaya) kopyala
-        const textArea = document.createElement("textarea");
-        textArea.value = metin;
-        textArea.style.top = "0";
-        textArea.style.left = "0";
-        textArea.style.position = "fixed";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
+        // Geçici ve görünmez bir div oluşturup tabloyu içine gömüyoruz
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = htmlMetin;
+        tempDiv.style.position = "absolute";
+        tempDiv.style.left = "-9999px";
+        document.body.appendChild(tempDiv);
+
+        // Sistemin sadece bu div içindeki tabloyu "Zengin Metin" olarak seçmesini sağlıyoruz
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(tempDiv);
+        selection.removeAllRanges();
+        selection.addRange(range);
         
         let basarili = false;
         try {
+            // HTML formatında panoya kopyala
             basarili = document.execCommand('copy');
-        } catch (err) {}
-        document.body.removeChild(textArea);
+        } catch (err) {
+            console.error(err);
+        }
 
-        // 2. Kullanıcıyı uyar ve sadece boş konulu bir mail tetikle
+        // Temizlik işlemleri
+        selection.removeAllRanges();
+        document.body.removeChild(tempDiv);
+
         if (basarili) {
-            alert("✅ LİSTE KOPYALANDI!\n\nŞimdi mail uygulamanız açılacak. Lütfen e-posta metin alanına basılı tutup 'Yapıştır' diyerek listeyi ekleyin.");
+            alert("✅ TABLO KOPYALANDI!\n\nŞimdi mail uygulamanız açılacak. Lütfen e-posta metin alanına basılı tutup 'Yapıştır' diyerek Excel tablonuzu ekleyin.");
         }
         
-        // 3. İçinde veri (body) barındırmadığı için güvenlik duvarına takılmayan temiz mail linki
+        // Boxer'ı temiz konu başlığıyla aç (İçeriği güvenlik duvarına takılmaması için kendimiz yapıştıracağız)
         const subject = encodeURIComponent(yer + " Transfer Bilgilendirmesi");
         window.location.href = "mailto:?subject=" + subject;
     }
@@ -360,7 +370,23 @@
 
             locationOrder.forEach(yer => {
                 let rowsHtml = "";
-                let mailBodyContent = `Lokasyon: ${yer}\n\nTransfer Listesi:\n-------------------------\n`; 
+                
+                // GÜNCELLEME: Pano için arka planda tam teşekküllü, renkli HTML tablosu oluşturuyoruz
+                let htmlTabloTaslagi = `
+                    <div style="font-family: Arial, sans-serif;">
+                        <h3 style="color: #217346; margin-bottom: 5px;">🏢 Lokasyon: ${yer}</h3>
+                        <p style="margin-bottom: 10px; font-weight: bold; color: #444;">📦 Transfer Listesi:</p>
+                        <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; border: 1px solid #ccc; font-size: 13px; text-align: left;">
+                            <thead style="background-color: #ebf1de; color: #333;">
+                                <tr>
+                                    <th style="padding: 8px;">Ürün</th>
+                                    <th style="padding: 8px;">Barkod</th>
+                                    <th style="padding: 8px;">Asistan</th>
+                                    <th style="padding: 8px;">Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
 
                 groupedData[yer].forEach(item => {
                     const key = item.key;
@@ -393,7 +419,17 @@
                     const checkMark = isD ? ' <span style="font-size:12px;">✅</span>' : '';
                     const durumMetni = isD ? "YAPILDI" : "BEKLİYOR";
                     
-                    mailBodyContent += `📦 Ürün: ${d.urun}\n🔖 Barkod: ${d.barkod}\n👤 Gönderen/Asistan: ${d.gonderen}\nDurum: ${durumMetni}\n\n`;
+                    // Tablo satırlarına durumlarına göre hafif renk veriyoruz (Boxer'da çok şık durur)
+                    const satırRengi = isD ? "#d4edda" : (isOnay ? "#fff3cd" : "#ffffff");
+
+                    htmlTabloTaslagi += `
+                        <tr style="background-color: ${satırRengi};">
+                            <td style="padding: 8px;"><b>${d.urun}</b></td>
+                            <td style="padding: 8px;">${d.barkod}</td>
+                            <td style="padding: 8px;">${d.gonderen}</td>
+                            <td style="padding: 8px;"><b>${durumMetni}</b></td>
+                        </tr>
+                    `;
 
                     rowsHtml += `
                     <tr class="${isD?'row-done':(isOnay?'row-onay':'row-waiting')}">
@@ -404,7 +440,10 @@
                     </tr>`;
                 });
 
-                mailTaslaklari[yer] = mailBodyContent;
+                htmlTabloTaslagi += `</tbody></table></div>`;
+                
+                // Arka plandaki objemize artık düz metin değil, bu zengin HTML'i kaydediyoruz
+                mailTaslaklari[yer] = htmlTabloTaslagi;
 
                 fullHtml += `
                 <div style="margin-bottom:15px; border:1px solid var(--excell-green); border-radius:4px; overflow:hidden; background:#fff;">
@@ -582,3 +621,4 @@
 </script>
 </body>
 </html>
+
