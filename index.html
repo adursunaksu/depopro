@@ -167,7 +167,6 @@
     let html5QrcodeScannerEx = null;
     let flashOn = false;
     
-    // GÜNCELLEME: Taslakları tuttuğumuz obje (Artık içine "Sekmeyle Ayrılmış" saf metin kaydedeceğiz)
     let mailTaslaklari = {};
 
     const aracMap = {
@@ -300,11 +299,12 @@
         }
     }
 
-    // GÜNCELLEME: En garantili kopyalama fonksiyonuna (textarea) geri döndük
+    // GÜNCELLEME: Kopyala ve Otomatik Doldurmalı Mail Aç Fonksiyonu
     function kopyalaVeMailAc(yer) {
         const metin = mailTaslaklari[yer];
         if(!metin) return;
 
+        // 1. İçeriği Panoya Kopyala
         const textArea = document.createElement("textarea");
         textArea.value = metin;
         textArea.style.top = "0";
@@ -321,11 +321,16 @@
         document.body.removeChild(textArea);
 
         if (basarili) {
-            alert("✅ VERİLER KOPYALANDI!\n\nŞimdi mail uygulamanız açılacak. Lütfen e-posta alanına basılı tutup 'Yapıştır' diyerek listeyi ekleyin.");
+            alert("✅ LİSTE KOPYALANDI!\n\nŞimdi mail açılacak. Lütfen Kime/CC alanlarını kontrol edip, sadece alt taraftaki boş alana 'Yapıştır' diyerek listeyi ekleyin.");
         }
         
-        const subject = encodeURIComponent(yer + " Transfer Bilgilendirmesi");
-        window.location.href = "mailto:?subject=" + subject;
+        // 2. OTOMATİK MAİL DOLDURMA (Buraları dilediğiniz gibi değiştirebilirsiniz)
+        const kimeMail = "depo_yetkilisi@ziraatbank.com.tr"; // Ana Mail
+        const ccMail = "bolge_yoneticisi@ziraatbank.com.tr"; // CC Mail
+        const konu = encodeURIComponent(yer + " Transfer Bilgilendirmesi");
+        
+        // Kime, CC ve Konu alanlarını hazır olarak Boxer'a gönderiyoruz
+        window.location.href = `mailto:${kimeMail}?cc=${ccMail}&subject=${konu}`;
     }
 
     function init() {
@@ -359,7 +364,6 @@
             locationOrder.forEach(yer => {
                 let rowsHtml = "";
                 
-                // GÜNCELLEME: Boxer engellerine takılmayan "Sekmeyle (Tab) Ayrılmış" düzenli metin (TSV)
                 let textTabloTaslagi = `🏢 LOKASYON: ${yer}\n\n`;
                 textTabloTaslagi += `ÜRÜN\tBARKOD\tASİSTAN\tDURUM\n`;
                 textTabloTaslagi += `--------------------------------------------------------\n`;
@@ -395,7 +399,6 @@
                     const checkMark = isD ? ' <span style="font-size:12px;">✅</span>' : '';
                     const durumMetni = isD ? "YAPILDI" : "BEKLİYOR";
                     
-                    // Verilerin arasına \t (Tab - Sekme) boşluğu ekliyoruz
                     textTabloTaslagi += `${d.urun}\t${d.barkod}\t${d.gonderen}\t${durumMetni}\n`;
 
                     rowsHtml += `
@@ -407,7 +410,6 @@
                     </tr>`;
                 });
 
-                // Panoya kopyalanması için objeye temiz TSV metnini atıyoruz
                 mailTaslaklari[yer] = textTabloTaslagi;
 
                 fullHtml += `
