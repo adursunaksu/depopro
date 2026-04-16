@@ -31,7 +31,7 @@
         .user-cell { background: #fff; color: #333; padding: 3px 10px; border: 1px solid #999; font-weight: bold; display: flex; align-items: center; gap: 8px; }
         .logout-btn { color: #dc3545; cursor: pointer; font-size: 9px; border-left: 1px solid #ccc; padding-left: 8px; }
         
-        .content { flex: 1; overflow-y: auto; padding: 5px; padding-bottom: 70px; }
+        .content { flex: 1; overflow-y: auto; padding: 5px; padding-bottom: 85px; }
         
         .excel-table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
         .excel-table th, .excel-table td { border: 1px solid var(--border); padding: 8px 4px; text-align: left; overflow: hidden; }
@@ -66,11 +66,43 @@
         .excel-actions { display: flex; gap: 5px; margin-top: 8px; }
         .btn-excel-add { flex: 1; padding: 12px; border: 1px solid #ccc; font-weight: bold; background: white; border-radius: 4px; cursor: pointer; }
         .btn-excel-save { flex: 1; padding: 12px; background: var(--excell-green); color: white; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; }
-        .excel-nav { height: 55px; background: #fff; border-top: 1px solid var(--border); display: flex; position: fixed; bottom: 0; width: 100%; }
-        .excel-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; cursor: pointer; }
-        .excel-nav-item.active { background: #f0f0f0; color: var(--excell-green); font-weight: bold; border-top: 3px solid var(--excell-green); }
-        #login-screen { position: fixed; inset: 0; background: var(--excell-green); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
         
+        .excel-nav { 
+            height: 65px; 
+            background: #fff; 
+            display: flex; 
+            position: fixed; 
+            bottom: 0; 
+            width: 100%; 
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.1); 
+            padding: 8px 10px; 
+            gap: 8px;
+            z-index: 2500;
+        }
+        .excel-nav-item { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            color: #666; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            transition: all 0.2s ease;
+            font-size: 12px;
+        }
+        .excel-nav-item.active { 
+            background: #e8f5e9; 
+            color: var(--excell-green); 
+            font-weight: bold; 
+            border: 2px solid var(--excell-green); 
+            box-shadow: 0 3px 8px rgba(33,115,70,0.3);
+            transform: translateY(-3px);
+        }
+
+        #login-screen { position: fixed; inset: 0; background: var(--excell-green); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
         .rem-box { margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
     </style>
 </head>
@@ -133,6 +165,9 @@
     </div>
 
     <div id="p-akis" class="app-page" style="display:none;">
+        <div style="padding:10px; background:#fff; border-bottom:1px solid #ccc; margin-bottom:5px; position:sticky; top:0; z-index:10;">
+            <input type="text" id="akis-ara" placeholder="Lokasyon, Ürün, Barkod, KP veya Asistan Ara..." oninput="filterAkis()" style="width:100%; padding:12px; border:2px solid var(--excell-green); border-radius:4px; font-size:13px; outline:none; font-weight:bold;">
+        </div>
         <div id="akis-container"></div>
     </div>
     
@@ -173,7 +208,10 @@
         "ahaksu@ziraatbank.com.tr": { ad: "HALUK", kod: "s528 Haluk" }
     };
 
-    const staticSubeler = ["S016 İZMİR SAHA DEPO", "68 BERGAMA/İZMİR ŞUBESİ","137 İZMİR ŞUBESİ","138 URLA/İZMİR ŞUBESİ","139 BAYINDIR/İZMİR ŞUBESİ","140 TİRE/İZMİR ŞUBESİ","141 ÇEŞME/İZMİR ŞUBESİ","142 SEFERİHİSAR/İZMİR ŞUBESİ","143 KARABURUN/İZMİR ŞUBESİ","145 KEMALPAŞA/İZMİR ŞUBESİ","146 MENEMEN/İZMİR ŞUBESİ","188 MANİSA ŞUBESİ","189 AKHİSAR/MANİSA ŞUBESİ","190 ALAŞEHİR/MANİSA ŞUBESİ","191 DEMİRCİ/MANİSA ŞUBESİ","192 SALİHLİ/MANİSA ŞUBESİ","193 SOMA/MANİSA ŞUBESİ","194 KIRKAĞAÇ/MANİSA ŞUBESİ","195 TURGUTLU/MANİSA ŞUBESİ","196 KULA/MANİSA ŞUBESİ","197 GÖRDES/MANİSA ŞUBESİ","221 ÖDEMİŞ/İZMİR ŞUBESİ","317 TORBALI/İZMİR ŞUBESİ","344 FOÇA/İZMİR ŞUBESİ","386 KINIK/İZMİR ŞUBESİ","387 DİKİLİ/İZMİR ŞUBESİ","410 ÇANKAYA/İZMİR ŞUBESİ","411 KARŞIYAKA/İZMİR ŞUBESİ","422 KİRAZ/İZMİR ŞUBESİ","561 SELÇUK/İZMİR ŞUBESİ","562 SELENDİ/MANİSA ŞUBESİ","572 SARIGÖL/MANİSA ŞUBESİ","590 ALAÇATI-ÇEŞME/İZMİR ŞUBESİ","615 BORNOVA/İZMİR ŞUBESİ","622 SARUHANLI/MANİSA ŞUBESİ","678 EŞREFPAŞA/İZMİR ŞUBESİ","711 BUCA/İZMİR ŞUBESİ","712 ALSANCAK/İZMİR ŞUBESİ","714 ALİAĞA/İZMİR ŞUBESİ","726 NARLIDERE/İZMİR ŞUBESİ","730 AHMETLİ/MANİSA ŞUBESİ","735 GÖLMARMARA/MANİSA ŞUBESİ","776 KONAK/İZMİR ŞUBESİ","791 MENDERES/İZMİR ŞUBESİ","800 ÇİĞLİ/İZMİR ŞUBESİ","803 BAYRAKLI/İZMİR ŞUBESİ","804 HATAY/İZMİR ŞUBESİ","807 GÖZTEPE/İZMİR ŞUBESİ","808 BALÇOVA/İZMİR ŞUBESİ","812 KARABAĞLAR/İZMİR ŞUBESİ","814 ÜÇYOL/İZMİR ŞUBESİ","869 KÖPRÜBAŞI/MANİSA ŞUBESİ","884 26 AĞUSTOS/İZMİR ŞUBESİ","902 ŞİRİNYER/İZMİR ŞUBESİ","904 ŞEMİKLER/İZMİR ŞUBESİ","911 ALTINDAĞ/İZMİR ŞUBESİ","928 GÜMÜŞPALA/İZMİR ŞUBESİ","934 DENİZBOSTANLI/İZMİR ŞUBESİ","974 GÜMÜLDÜR-MENDERES/İZMİR ŞUBESİ","975 MTK ÇARŞI/İZMİR ŞUBESİ","999 ÇAMDİBİ/İZMİR ŞUBESİ","1000 GAZİEMİR/İZMİR ŞUBESİ","1021 BEYDAĞ/İZMİR ŞUBESİ","1043 YEŞİLYURT/İZMİR ŞUBESİ","1089 ALAYBEY/İZMİR ŞUBESİ","1203 ÜÇKUYULAR/İZMİR ŞUBESİ","1204 KAHRAMANLAR/İZMİR ŞUBESİ","1256 MESİR/MANİSA ŞUBESİ","1333 EFES/İZMİR ŞUBESİ","1403 KAZIMDİRİK/İZMİR ŞUBESİ","1446 EGE TIP/İZMİR ŞUBESİ","1506 9 EYLÜL ÜNİVERSİTESİ/İZMİR ŞUBESİ","1533 FAHRETTİN ALTAY/İZMİR ŞUBESİ","1625 GÜZELBAHÇE/İZMİR ŞUBESİ","1743 IŞIKKENT/İZMİR ŞUBESİ","1750 İZMİR PARA GRUP MERKEZİ","1751 İZMİR KURUMSAL ŞUBE","1768 ATATÜRK OSB/İZMİR TİCARİ ŞUBE","1778 YENİ GIDA ÇARŞISI/İZMİR ŞUBESİ","1815 İZMİR BÖLGE YÖNETİCİLİĞİ - KONAK","1816 İZMİR BÖLGE YÖNETİCİLİĞİ - KARŞIYAKA","1840 MANİSA BÖLGE YÖNETİCİLİĞİ","1903 GİRNE BULVARI/İZMİR ŞUBESİ","1938 MANİSA TİCARİ ŞUBE","1958 KARABAĞLAR/İZMİR TİCARİ ŞUBE","1961 BOZYAKA/İZMİR ŞUBESİ","1972 AYRANCILAR/İZMİR ŞUBESİ","1984 MANAVKUYU/İZMİR ŞUBESİ","1987 YENİŞAKRAN-ALİAĞA/İZMİR ŞUBESİ","1992 GEDİZ MAHALLESİ/İZMİR ŞUBESİ","1993 YIKIKKEMER/İZMİR ŞUBESİ","2081 YENİ GİRNE/İZMİR ŞUBESİ","2088 ŞEHİTLER/MANİSA ŞUBESİ","2129 ATAKENT/İZMİR ŞUBESİ","2137 OSMANGAZİ-BAYRAKLI/İZMİR ŞUBESİ","2152 ATAŞEHİR/İZMİR ŞUBESİ","2159 İZMİR CADDESİ/MANİSA ŞUBESİ","2170 HASAN TAHSİN-BUCA/İZMİR ŞUBESİ","2267 KEMALPAŞA/İZMİR TİCARİ ŞUBE","2319 CUMHURİYET-SALİHLİ/MANİSA ŞUBESİ","2335 BORNOVA ATA/İZMİR ŞUBESİ","2408 ŞEHZADELER/MANİSA ŞUBESİ","2425 SEYDİKÖY-GAZİEMİR/İZMİR ŞUBESİ","2436 MENDERES CADDESİ/İZMİR ŞUBESİ","2474 ÇAĞLAK-AKHİSAR/MANİSA ŞUBESİ","2477 ULUKENT-MENEMEN/İZMİR ŞUBESİ","2494 4.SANAYİ SİTESİ/İZMİR ŞUBESİ","2496 ULUS MEYDANI-ÖDEMİŞ/İZMİR ŞUBESİ","2504 7 EYLÜL-TURGUTLU/MANİSA ŞUBESİ","2514 ÇANDARLI-DİKİLİ/İZMİR ŞUBESİ","2515 1.SANAYİ/İZMİR ŞUBESİ","2566 ERTUĞRUL MAHALLESİ-TORBALI/İZMİR ŞUBESİ","2630 YEŞİLOVA-BORNOVA/İZMİR ŞUBESİ","2642 YUNUSEMRE/MANİSA ŞUBESİ","2673 BAKIRÇAY-BERGAMA/İZMİR ŞUBESİ","2697 ATATÜRK HASTANESİ/İZMİR ŞUBESİ"];
+    const staticSubeler = [
+        "S016 İzmir Saha Depo", "68 Bergama-İzmir Şubesi", "137 İzmir Şubesi", "138 Urla-İzmir Şubesi", "139 Bayındır-İzmir Şubesi", "140 Tire-İzmir Şubesi", "141 Çeşme-İzmir Şubesi", "142 Seferihisar-İzmir Şubesi", "143 Karaburun-İzmir Şubesi", "145 Kemalpaşa-İzmir Şubesi", "146 Menemen-İzmir Şubesi", "188 Manisa Şubesi", "189 Akhisar-Manisa Şubesi", "190 Alaşehir-Manisa Şubesi", "191 Demirci-Manisa Şubesi", "192 Salihli-Manisa Şubesi", "193 Soma-Manisa Şubesi", "194 Kırkağaç-Manisa Şubesi", "195 Turgutlu-Manisa Şubesi", "196 Kula-Manisa Şubesi", "197 Gördes-Manisa Şubesi", "221 Ödemiş-İzmir Şubesi", "317 Torbalı-İzmir Şubesi", "344 Foça-İzmir Şubesi", "386 Kınık-İzmir Şubesi", "387 Dikili-İzmir Şubesi", "410 Çankaya-İzmir Şubesi", "411 Karşıyaka-İzmir Şubesi", "422 Kiraz-İzmir Şubesi", "561 Selçuk-İzmir Şubesi", "562 Selendi-Manisa Şubesi", "572 Sarıgöl-Manisa Şubesi", "590 Alaçatı Çeşme-İzmir Şubesi", "615 Bornova-İzmir Şubesi", "622 Saruhanlı-Manisa Şubesi", "678 Eşrefpaşa-İzmir Şubesi", "711 Buca-İzmir Şubesi", "712 Alsancak-İzmir Şubesi", "714 Aliağa-İzmir Şubesi", "726 Narlıdere-İzmir Şubesi", "730 Ahmetli-Manisa Şubesi", "735 Gölmarmara-Manisa Şubesi", "776 Konak-İzmir Şubesi", "791 Menderes-İzmir Şubesi", "800 Çiğli-İzmir Şubesi", "803 Bayraklı-İzmir Şubesi", "804 Hatay-İzmir Şubesi", "807 Göztepe-İzmir Şubesi", "808 Balçova-İzmir Şubesi", "812 Karabağlar-İzmir Şubesi", "814 Üçyol-İzmir Şubesi", "869 Köprübaşı-Manisa Şubesi", "884 26 Ağustos-İzmir Şubesi", "902 Şirinyer-İzmir Şubesi", "904 Şemikler-İzmir Şubesi", "911 Altındağ-İzmir Şubesi", "928 Gümüşpala-İzmir Şubesi", "934 Denizbostanlı-İzmir Şubesi", "974 Gümüldür Menderes-İzmir Şubesi", "975 Mtk Çarşı-İzmir Şubesi", "999 Çamdibi-İzmir Şubesi", "1000 Gaziemir-İzmir Şubesi", "1021 Beydağ-İzmir Şubesi", "1043 Yeşilyurt-İzmir Şubesi", "1089 Alaybey-İzmir Şubesi", "1203 Üçkuyular-İzmir Şubesi", "1204 Kahramanlar-İzmir Şubesi", "1256 Mesir-Manisa Şubesi", "1333 Efes-İzmir Şubesi", "1403 Kazımdirik-İzmir Şubesi", "1446 Ege Tıp-İzmir Şubesi", "1506 9 Eylül Üniversitesi-İzmir Şubesi", "1533 Fahrettin Altay-İzmir Şubesi", "1625 Güzelbahçe-İzmir Şubesi", "1743 Işıkkent-İzmir Şubesi", "1750 İzmir Para Grup Merkezi", "1751 İzmir Kurumsal Şube", "1768 Atatürk Osb-İzmir Ticari Şube", "1778 Yeni Gıda Çarşısı-İzmir Şubesi", "1815 İzmir Bölge Yöneticiliği-Konak", "1816 İzmir Bölge Yöneticiliği-Karşıyaka", "1840 Manisa Bölge Yöneticiliği", "1903 Girne Bulvarı-İzmir Şubesi", "1938 Manisa Ticari Şube", "1958 Karabağlar-İzmir Ticari Şube", "1961 Bozyaka-İzmir Şubesi", "1972 Ayrancılar-İzmir Şubesi", "1984 Manavkuyu-İzmir Şubesi", "1987 Yenişakran Aliağa-İzmir Şubesi", "1992 Gediz Mahallesi-İzmir Şubesi", "1993 Yıkıkkemer-İzmir Şubesi", "2081 Yeni Girne-İzmir Şubesi", "2088 Şehitler-Manisa Şubesi", "2129 Atakent-İzmir Şubesi", "2137 Osmangazi Bayraklı-İzmir Şubesi", "2152 Ataşehir-İzmir Şubesi", "2159 İzmir Caddesi-Manisa Şubesi", "2170 Hasan Tahsin Buca-İzmir Şubesi", "2267 Kemalpaşa-İzmir Ticari Şube", "2319 Cumhuriyet Salihli-Manisa Şubesi", "2335 Bornova Ata-İzmir Şubesi", "2408 Şehzadeler-Manisa Şubesi", "2425 Seydiköy Gaziemir-İzmir Şubesi", "2436 Menderes Caddesi-İzmir Şubesi", "2474 Çağlak Akhisar-Manisa Şubesi", "2477 Ulukent Menemen-İzmir Şubesi", "2494 4.Sanayi Sitesi-İzmir Şubesi", "2496 Ulus Meydanı Ödemiş-İzmir Şubesi", "2504 7 Eylül Turgutlu-Manisa Şubesi", "2514 Çandarlı Dikili-İzmir Şubesi", "2515 1.Sanayi-İzmir Şubesi", "2566 Ertuğrul Mahallesi Torbalı-İzmir Şubesi", "2630 Yeşilova Bornova-İzmir Şubesi", "2642 Yunusemre-Manisa Şubesi", "2673 Bakırçay Bergama-İzmir Şubesi", "2697 Atatürk Hastanesi-İzmir Şubesi"
+    ];
+
     let dynamicSubeler = [];
     
     window.onload = function() {
@@ -235,9 +273,9 @@
         let parts = text.split(' ');
         if(/^\d+$/.test(parts[0])) {
             return parts.slice(1).join(' ')
-                        .replace(/\/İZMİR ŞUBESİ/g, '')
-                        .replace(/\/MANİSA ŞUBESİ/g, '')
-                        .replace(/ŞUBESİ/g, '')
+                        .replace(/-İzmir Şubesi/g, '')
+                        .replace(/-Manisa Şubesi/g, '')
+                        .replace(/Şubesi/g, '')
                         .trim();
         }
         return text; 
@@ -301,25 +339,26 @@
             if(!container) return;
             
             const groupedData = {};
-            const locationOrder = [];
+            const groupOrder = [];
             
             snap.forEach(i => {
                 const d = i.val();
                 const key = i.key;
-                
-                if(!groupedData[d.yer]) groupedData[d.yer] = [];
-                groupedData[d.yer].unshift({ key, d });
-
-                const idx = locationOrder.indexOf(d.yer);
-                if(idx > -1) locationOrder.splice(idx, 1);
-                locationOrder.unshift(d.yer);
+                const groupKey = d.yer + "|||" + (d.saat || "Belirtilmemiş");
+                if(!groupedData[groupKey]) groupedData[groupKey] = [];
+                groupedData[groupKey].unshift({ key, d });
+                const idx = groupOrder.indexOf(groupKey);
+                if(idx > -1) groupOrder.splice(idx, 1);
+                groupOrder.unshift(groupKey);
             });
 
             let fullHtml = "";
-
-            locationOrder.forEach(yer => {
+            groupOrder.forEach(gKey => {
+                const parts = gKey.split("|||");
+                const yer = parts[0];
+                const saat = parts[1];
                 let rowsHtml = "";
-                groupedData[yer].forEach(item => {
+                groupedData[gKey].forEach(item => {
                     const key = item.key;
                     const d = item.d;
                     const isD = d.status === "YAPILDI";
@@ -333,54 +372,32 @@
                             ? `<button class="btn-status bg-onay" onclick="approveTransfer('${key}')">KABUL ET</button>`
                             : `<span style="color:orange; font-weight:bold;">ONAYDA</span>`;
                     } else {
-                        // METİN DEĞİŞİKLİĞİ: "EDİLDİ" tekrar "YAPILDI" oldu
                         actionHtml = `<button class="btn-status ${isD?'bg-done':'bg-waiting'}" onclick="db.ref('transferler/canli_akis/${key}').update({status:('${d.status}'==='BEKLEMEDE'?'YAPILDI':'BEKLEMEDE')})">${isD?'YAPILDI':'BEKLİYOR'}</button>`;
                     }
 
-                    let kpCell = "";
-                    if(isPassiveKP) {
-                        kpCell = `<input type="text" class="kp-input-large" readonly style="background:#eee; border:none; color:#666;" value="${d.kp||''}">`;
-                    } else {
-                        kpCell = `
-                            <div class="kp-wrapper">
-                                <input type="text" id="kp-${key}" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})" value="${d.kp||''}">
-                                <span class="magnifier-btn" onclick="startScannerEx('kp-${key}')">🔍</span>
-                            </div>`;
-                    }
+                    let kpCell = isPassiveKP ? `<input type="text" class="kp-input-large" readonly style="background:#eee; border:none; color:#666;" value="${d.kp||''}">`
+                        : `<div class="kp-wrapper"><input type="text" id="kp-${key}" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})" value="${d.kp||''}"><span class="magnifier-btn" onclick="startScannerEx('kp-${key}')">🔍</span></div>`;
 
-                    const checkMark = isD ? ' <span style="font-size:12px;">✅</span>' : '';
-
-                    rowsHtml += `
-                    <tr class="${isD?'row-done':(isOnay?'row-onay':'row-waiting')}">
-                        <td style="width:30%;"><b>${d.urun}</b><br><small style="color:#555;">${d.barkod}${checkMark}</small></td>
+                    rowsHtml += `<tr class="${isD?'row-done':(isOnay?'row-onay':'row-waiting')}">
+                        <td style="width:30%;"><b>${d.urun}</b><br><small style="color:#555;">${d.barkod}${isD?' ✅':''}</small></td>
                         <td style="width:20%;">${d.gonderen}</td>
                         <td style="width:25%;">${kpCell}</td>
                         <td style="width:25%;">${actionHtml}</td>
                     </tr>`;
                 });
 
-                fullHtml += `
-                <div style="margin-bottom:15px; border:1px solid var(--excell-green); border-radius:4px; overflow:hidden; background:#fff;">
-                    <div style="background:var(--excell-green); color:white; padding:8px 10px; font-weight:bold; font-size:12px;">
-                        🏢 ${yer}
+                fullHtml += `<div style="margin-bottom:15px; border:1px solid var(--excell-green); border-radius:4px; overflow:hidden; background:#fff;">
+                    <div style="background:var(--excell-green); color:white; padding:8px 10px; font-weight:bold; font-size:12px; display:flex; justify-content:space-between;">
+                        <span>🏢 ${yer}</span><span style="font-size:10px; font-weight:normal; opacity:0.8;">${saat}</span>
                     </div>
                     <table class="excel-table" style="border:none;">
-                        <thead>
-                            <tr>
-                                <th style="width:30%;">Ürün-Barkod</th>
-                                <th style="width:20%;">Asistan</th>
-                                <th style="width:25%;">KP NO</th>
-                                <th style="width:25%;">Transfer</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rowsHtml}
-                        </tbody>
+                        <thead><tr><th>Ürün-Barkod</th><th>Asistan</th><th>KP NO</th><th>Transfer</th></tr></thead>
+                        <tbody>${rowsHtml}</tbody>
                     </table>
                 </div>`;
             });
-            
             container.innerHTML = fullHtml;
+            if(document.getElementById('akis-ara') && document.getElementById('akis-ara').value !== '') filterAkis();
         });
 
         db.ref('depolar').on('value', snap => {
@@ -388,13 +405,7 @@
             snap.forEach(d => {
                 const isMyDepo = d.key === uFullKey;
                 let rws = ""; 
-                d.forEach(r => { 
-                    const v = r.val(); 
-                    rws += `<tr class="${isMyDepo?'depo-row':''}" onclick="${isMyDepo?`openTransferModal('${v.urun}','${v.barkod}')`:''}">
-                        <td>${v.urun}</td>
-                        <td>${v.barkod}</td>
-                    </tr>`; 
-                });
+                d.forEach(r => { const v = r.val(); rws += `<tr class="${isMyDepo?'depo-row':''}" onclick="${isMyDepo?`openTransferModal('${v.urun}','${v.barkod}')`:''}"><td>${v.urun}</td><td>${v.barkod}</td></tr>`; });
                 c.innerHTML += `<div style="margin-bottom:10px; border:1px solid #ccc;"><div style="background:#217346; color:white; padding:8px; font-weight:bold;">📦 ${d.key} Arac Depo</div><table class="excel-table">${rws}</table></div>`;
             });
         });
@@ -410,12 +421,8 @@
                 <option value="ÇIKIŞ" ${type==='ÇIKIŞ'?'selected':''}>VER</option>
                 <option value="GİRİŞ" ${type==='GİRİŞ'?'selected':''}>AL</option>
             </select>
-            <div class="scan-container">
-                <input type="number" id="${rowId}" placeholder="Barkod..." class="barkod-input">
-                <span class="magnifier-btn" onclick="startScannerEx('${rowId}')">🔍</span>
-            </div>
+            <div class="scan-container"><input type="number" id="${rowId}" placeholder="Barkod..." class="barkod-input"><span class="magnifier-btn" onclick="startScannerEx('${rowId}')">🔍</span></div>
             <select class="urun-select" onchange="checkNewUrun(this)"></select>`;
-            
         document.getElementById('items-container').appendChild(div);
         updateAllSelects();
     }
@@ -488,7 +495,6 @@
 
         let addedCount = 0;
         const kpFormatted = formatKP(target);
-
         const rowElements = Array.from(document.querySelectorAll('.excel-row-container')).reverse();
 
         rowElements.forEach(row => {
@@ -512,8 +518,7 @@
 
         if (addedCount > 0) { 
             document.getElementById('items-container').innerHTML = ""; 
-            addRowEx("ÇIKIŞ"); 
-            addRowEx("GİRİŞ"); 
+            addRowEx("ÇIKIŞ"); addRowEx("GİRİŞ"); 
         }
         alert(addedCount > 0 ? "Başarıyla kaydedildi." : "Kaydedilecek veri yok.");
     }
@@ -531,6 +536,25 @@
     function toggleTruckMode() { const isT = document.getElementById('to-my-truck').checked; document.getElementById('target-sube').value = isT ? uFullKey : ""; document.getElementById('target-sube').style.opacity = isT ? "0.6" : "1"; }
     function updateSubeCounter() { const total = staticSubeler.length + dynamicSubeler.length; document.getElementById('target-sube').placeholder = `Hedef Lokasyon Seçin (${total})`; }
     function tabEx(id, el) { document.querySelectorAll('.app-page').forEach(p => p.style.display = 'none'); document.getElementById('p-'+id).style.display = 'block'; document.querySelectorAll('.excel-nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+
+    function filterAkis() {
+        const ara = document.getElementById('akis-ara').value.toLocaleUpperCase('tr-TR');
+        const wrappers = document.querySelectorAll('#akis-container > div');
+        wrappers.forEach(wrapper => {
+            const locationHeader = wrapper.querySelector('div').innerText.toLocaleUpperCase('tr-TR');
+            const rows = wrapper.querySelectorAll('tbody tr');
+            let hasVisibleRow = false;
+            const locationMatch = locationHeader.includes(ara);
+            rows.forEach(row => {
+                let rowText = row.innerText.toLocaleUpperCase('tr-TR');
+                const inputs = row.querySelectorAll('input');
+                inputs.forEach(input => { rowText += " " + input.value.toLocaleUpperCase('tr-TR'); });
+                if (locationMatch || rowText.includes(ara)) { row.style.display = ''; hasVisibleRow = true; } 
+                else { row.style.display = 'none'; }
+            });
+            wrapper.style.display = (hasVisibleRow || locationMatch) ? '' : 'none';
+        });
+    }
 </script>
 </body>
 </html>
