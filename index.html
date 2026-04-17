@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v73.9</title>
+    <title>S016 Depo Takip v74.0</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -67,6 +67,20 @@
         .btn-excel-add { flex: 1; padding: 12px; border: 1px solid #ccc; font-weight: bold; background: white; border-radius: 4px; cursor: pointer; }
         .btn-excel-save { flex: 1; padding: 12px; background: var(--excell-green); color: white; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; }
         
+        /* Chat UI Stilleri */
+        .chat-wrapper { margin-top: 15px; border: 1px solid var(--border); border-radius: 4px; background: #fff; display: flex; flex-direction: column; height: 280px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .chat-header { background: #444; color: white; padding: 8px; font-weight: bold; font-size: 12px; text-align: center; border-top-left-radius: 4px; border-top-right-radius: 4px; display: flex; justify-content: center; align-items: center; gap: 5px; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; background: #e5ddd5; }
+        .chat-msg { max-width: 85%; padding: 6px 10px; border-radius: 8px; font-size: 12px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
+        .msg-mine { background: #dcf8c6; align-self: flex-end; border-bottom-right-radius: 0; }
+        .msg-other { background: #fff; align-self: flex-start; border-bottom-left-radius: 0; }
+        .msg-sender { font-size: 10px; font-weight: bold; color: var(--excell-green); margin-bottom: 3px; }
+        .msg-time { font-size: 9px; color: #888; text-align: right; margin-top: 3px; }
+        .chat-input-area { display: flex; border-top: 1px solid #ccc; background: #f0f0f0; padding: 8px; gap: 8px; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; }
+        .chat-input { flex: 1; border: 1px solid #ccc; border-radius: 20px; padding: 8px 15px; outline: none; font-size: 12px; }
+        .chat-send-btn { background: var(--excell-green); color: white; border: none; border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: transform 0.1s; }
+        .chat-send-btn:active { transform: scale(0.9); }
+
         .excel-nav { height: 65px; background: #fff; display: flex; position: fixed; bottom: 0; width: 100%; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); padding: 8px 10px; gap: 8px; z-index: 2500; }
         .excel-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; transition: all 0.2s ease; font-size: 12px; }
         .excel-nav-item.active { background: #e8f5e9; color: var(--excell-green); font-weight: bold; border: 2px solid var(--excell-green); box-shadow: 0 3px 8px rgba(33,115,70,0.3); transform: translateY(-3px); }
@@ -126,7 +140,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016_DEPO_TAKIP_v73.9</div>
+    <div style="font-weight:bold;">S016_DEPO_TAKIP_v74.0</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -144,7 +158,17 @@
             <button class="btn-excel-add" onclick="addRowEx()">➕ Satır Ekle</button>
             <button class="btn-excel-save" id="btnSave" onclick="saveAllEx()">💾 KAYDET VE GÖNDER</button>
         </div>
-    </div>
+        
+        <div class="chat-wrapper">
+            <div class="chat-header">💬 EKİP SOHBETİ</div>
+            <div class="chat-messages" id="chat-messages">
+                </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Mesajınızı yazın..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                <button class="chat-send-btn" onclick="sendChatMessage()">➤</button>
+            </div>
+        </div>
+        </div>
 
     <div id="p-akis" class="app-page" style="display:none;">
         <div style="padding:10px; background:#fff; border-bottom:1px solid #ccc; margin-bottom:5px; position:sticky; top:0; z-index:10;">
@@ -336,6 +360,7 @@
             addRowEx("ÇIKIŞ"); 
             addRowEx("GİRİŞ");
             init();
+            initChat(); // Sohbet başlatılıyor
         }).catch(() => alert("Giriş Hatalı!"));
     }
 
@@ -346,6 +371,55 @@
             });
         }
     }
+
+    // SOHBET FONKSİYONLARI BAŞLANGIÇ
+    function initChat() {
+        // chat_messages düğümünü dinle (en son 50 mesaj)
+        db.ref('chat_messages').orderByChild('timestamp').limitToLast(50).on('value', snap => {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = '';
+            
+            snap.forEach(child => {
+                const d = child.val();
+                const isMine = (d.sender_kod === uFullKey);
+                
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `chat-msg ${isMine ? 'msg-mine' : 'msg-other'}`;
+                
+                let innerHTML = '';
+                if (!isMine) {
+                    innerHTML += `<div class="msg-sender">${d.sender}</div>`;
+                }
+                innerHTML += `<div>${d.text}</div><div class="msg-time">${d.time}</div>`;
+                
+                msgDiv.innerHTML = innerHTML;
+                container.appendChild(msgDiv);
+            });
+            
+            // Yeni mesaj geldiğinde en alta kaydır
+            container.scrollTop = container.scrollHeight;
+        });
+    }
+
+    function sendChatMessage() {
+        const input = document.getElementById('chat-input');
+        const msg = input.value.trim();
+        if(!msg) return;
+
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
+
+        db.ref('chat_messages').push({
+            sender: uName,
+            sender_kod: uFullKey,
+            text: msg,
+            time: timeStr,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+        
+        input.value = '';
+    }
+    // SOHBET FONKSİYONLARI BİTİŞ
 
     function init() {
         db.ref('ayarlar/urun_listesi').on('value', snap => { updateAllSelects(); });
@@ -573,7 +647,6 @@
         const rowId = 'brk-' + Math.random().toString(36).substr(2, 9);
         const div = document.createElement('div'); 
         div.className = "excel-row-container";
-        // Görünen kelimeleri "Takılan" ve "Arızalı" yaptık, ancak value kısımları ÇIKIŞ ve GİRİŞ olarak kaldı.
         div.innerHTML = `
             <select class="type-select ${type==='ÇIKIŞ'?'bg-out':'bg-in'}" onchange="this.classList.toggle('bg-out', this.value==='ÇIKIŞ'); this.classList.toggle('bg-in', this.value==='GİRİŞ')">
                 <option value="ÇIKIŞ" ${type==='ÇIKIŞ'?'selected':''}>Takılan</option>
