@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v74.1</title>
+    <title>S016 Depo Takip v74.2</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
-        :root { --excell-green: #217346; --border: #d4d4d4; --bg: #f3f3f3; }
+        :root { --excell-green: #217346; --border: #d4d4d4; --bg: #ebf0ec; } /* Arka plan rengi hafif mint/gri olarak güncellendi */
         .bg-in { background-color: #f8dbdb !important; color: #d83b01 !important; font-weight: bold; } 
         .bg-out { background-color: #d9e9f3 !important; color: #0078d4 !important; font-weight: bold; } 
         
@@ -32,7 +32,7 @@
         .logout-btn { color: #dc3545; cursor: pointer; font-size: 9px; border-left: 1px solid #ccc; padding-left: 8px; }
         
         .content { flex: 1; overflow-y: auto; padding: 5px; }
-        .app-page { padding-bottom: 140px; } /* Pandik büyütüldü :) Sayfanın en altına ekstra boşluk eklendi */
+        .app-page { padding-bottom: 140px; } 
         
         .excel-table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
         .excel-table th, .excel-table td { border: 1px solid var(--border); padding: 8px 4px; text-align: left; overflow: hidden; }
@@ -140,7 +140,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016_DEPO_TAKIP_v74.1</div>
+    <div style="font-weight:bold;">S016_DEPO_TAKIP_v74.2</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -374,7 +374,6 @@
 
     // SOHBET FONKSİYONLARI BAŞLANGIÇ
     function initChat() {
-        // chat_messages düğümünü dinle (en son 50 mesaj)
         db.ref('chat_messages').orderByChild('timestamp').limitToLast(50).on('value', snap => {
             const container = document.getElementById('chat-messages');
             container.innerHTML = '';
@@ -396,7 +395,6 @@
                 container.appendChild(msgDiv);
             });
             
-            // Yeni mesaj geldiğinde en alta kaydır
             container.scrollTop = container.scrollHeight;
         });
     }
@@ -848,4 +846,4 @@
     }
 </script>
 </body>
-    </html>
+</html>
