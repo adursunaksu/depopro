@@ -17,7 +17,7 @@
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; font-size: 11px; }
         body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        #transfer-modal, #sube-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2000; padding:20px; }
+        #transfer-modal, #sube-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:3000; padding:20px; }
         .modal-box { background:white; border-radius:8px; height:85vh; display:flex; flex-direction:column; overflow:hidden; border: 1px solid #666; }
         .modal-search { padding:10px; border-bottom:1px solid #eee; }
         .modal-search input { width:100%; padding:12px; border:2px solid var(--excell-green); border-radius:4px; font-size:14px; outline: none; }
@@ -58,7 +58,7 @@
         .kp-input-large { width: 100%; border: 1px solid #ddd; padding: 4px 25px 4px 4px; border-radius: 2px; height: 26px; font-size: 10px; }
         .magnifier-btn { position: absolute; right: 5px; cursor: pointer; font-size: 14px; color: var(--excell-green); user-select: none; }
         
-        #camera-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:3000; padding:10px; flex-direction:column; justify-content:center; }
+        #camera-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:3500; padding:10px; flex-direction:column; justify-content:center; }
         #reader { width:100%; max-width:400px; margin:auto; background:white; border-radius:8px; overflow:hidden; }
         #camera-close-btn { width:40px; height:40px; background:white; border-radius:50%; color:red; font-size:24px; font-weight:bold; border:none; position:absolute; top:20px; right:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px rgba(0,0,0,0.3); }
         #flash-btn { width:40px; height:40px; background:white; border-radius:50%; color:#333; font-size:20px; border:none; position:absolute; top:20px; left:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px rgba(0,0,0,0.3); }
@@ -71,7 +71,7 @@
         .excel-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; transition: all 0.2s ease; font-size: 12px; }
         .excel-nav-item.active { background: #e8f5e9; color: var(--excell-green); font-weight: bold; border: 2px solid var(--excell-green); box-shadow: 0 3px 8px rgba(33,115,70,0.3); transform: translateY(-3px); }
 
-        #login-screen { position: fixed; inset: 0; background: var(--excell-green); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        #login-screen { position: fixed; inset: 0; background: var(--excell-green); z-index: 4000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
         .rem-box { margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
     </style>
 </head>
@@ -225,24 +225,40 @@
 
     function startScannerEx(targetInputId) {
         document.getElementById('camera-modal').style.display = 'flex';
-        html5QrcodeScannerEx = new Html5Qrcode("reader");
-        flashOn = false;
+        
+        try {
+            html5QrcodeScannerEx = new Html5Qrcode("reader");
+            flashOn = false;
 
-        html5QrcodeScannerEx.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 150 } },
-            (decodedText) => {
-                const input = document.getElementById(targetInputId);
-                if(input) {
-                    input.value = decodedText;
-                    if(targetInputId.startsWith('kp-')) {
-                        const dbKey = targetInputId.replace('kp-', '');
-                        db.ref('transferler/canli_akis/' + dbKey).update({kp: decodedText});
+            html5QrcodeScannerEx.start(
+                { facingMode: "environment" },
+                { 
+                    fps: 20, 
+                    // Depo 1D barkodları için geniş ve basık bir okuma kutusu daha iyidir
+                    qrbox: { width: 300, height: 100 },
+                    experimentalFeatures: { useBarCodeDetectorIfSupported: true } 
+                },
+                (decodedText) => {
+                    const input = document.getElementById(targetInputId);
+                    if(input) {
+                        input.value = decodedText;
+                        if(targetInputId.startsWith('kp-')) {
+                            const dbKey = targetInputId.replace('kp-', '');
+                            db.ref('transferler/canli_akis/' + dbKey).update({kp: decodedText});
+                        }
                     }
+                    stopScannerEx();
                 }
-                stopScannerEx();
-            }
-        ).catch(err => { console.error(err); stopScannerEx(); });
+            ).catch(err => { 
+                console.error("Kamera açılamadı:", err);
+                alert("Kamera başlatılamadı! Lütfen tarayıcı izinlerinizi kontrol edin.");
+                stopScannerEx(); 
+            });
+        } catch (e) {
+            console.error("Barkod kütüphanesi hatası:", e);
+            alert("Barkod okuyucu yüklenirken bir hata oluştu.");
+            stopScannerEx();
+        }
     }
 
     function toggleFlash() {
