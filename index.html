@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v73.4</title>
+    <title>S016 Depo Takip v73.5</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -68,7 +68,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016 v73.4</div>
+    <div style="font-weight:bold;">S016 v73.5</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -124,7 +124,6 @@
     
     let uName = ""; let uFullKey = ""; let uMail = "";
     
-    // Şube Listesi Tam Sürüm
     const staticSubeler = [
         "S016 İzmir Saha Depo", "68 Bergama-İzmir Şubesi", "137 İzmir Şubesi", "138 Urla-İzmir Şubesi", 
         "139 Bayındır-İzmir Şubesi", "140 Tire-İzmir Şubesi", "141 Çeşme-İzmir Şubesi", "142 Seferihisar-İzmir Şubesi", 
@@ -169,7 +168,6 @@
         "ahaksu@ziraatbank.com.tr": { ad: "HALUK", kod: "s528 Haluk" }
     };
 
-    // --- DOĞRU INTENT ÇAĞRISI VE GİRİŞ KONTROLÜ ---
     window.onload = function() {
         const mail = localStorage.getItem('s016_mail');
         const pass = localStorage.getItem('s016_pass');
@@ -219,11 +217,8 @@
     }
 
     function startScannerEx(targetId) {
-        // İŞTE SİHİRLİ DOKUNUŞ BURADA:
-        // ret= parametresi ile "tarama bitince nereye döneceğini" söylüyoruz.
-        // {CODE} kısmını Binary Eye okuduğu değerle otomatik değiştirecektir.
         const returnUrl = window.location.origin + window.location.pathname + "?target=" + targetId + "&barcode={CODE}";
-        const intentUrl = "intent://scan/?ret=" + encodeURIComponent(returnUrl) + "#Intent;scheme=zxing;package=com.google.zxing.client.android;end";
+        const intentUrl = "intent://scan/?ret=" + encodeURIComponent(returnUrl) + "#Intent;scheme=zxing;package=de.markusfisch.android.binaryeye;S.browser_fallback_url=" + encodeURIComponent(window.location.href) + ";end";
         window.location.href = intentUrl;
     }
 
