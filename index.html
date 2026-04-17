@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v74.2</title>
+    <title>S016 Depo Takip v74.3</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
-        :root { --excell-green: #217346; --border: #d4d4d4; --bg: #ebf0ec; } /* Arka plan rengi hafif mint/gri olarak güncellendi */
+        :root { --excell-green: #217346; --border: #d4d4d4; --bg: #ebf0ec; }
         .bg-in { background-color: #f8dbdb !important; color: #d83b01 !important; font-weight: bold; } 
         .bg-out { background-color: #d9e9f3 !important; color: #0078d4 !important; font-weight: bold; } 
         
@@ -111,7 +111,7 @@
 
 <div id="akis-context-menu">
     <div class="context-menu-item" onclick="sendAkisMail()">📧 E-Posta Gönder (Panoya Kopyala)</div>
-    <div class="context-menu-item" onclick="deleteAkisGroup()">🗑️ Grubu Sil</div>
+    <div class="context-menu-item" id="btnDeleteGroup" onclick="deleteAkisGroup()">🗑️ Grubu Sil</div>
 </div>
 
 <div id="transfer-modal">
@@ -140,7 +140,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016_DEPO_TAKIP_v74.2</div>
+    <div style="font-weight:bold;">S016_DEPO_TAKIP_v74.3</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -155,7 +155,7 @@
         </div>
         <div id="items-container"></div>
         <div id="action-area" class="excel-actions">
-            <button class="btn-excel-add" onclick="addRowEx()">➕ Satır Ekle</button>
+            <button class="btn-excel-add" id="btnAddRow" onclick="addRowEx()">➕ Satır Ekle</button>
             <button class="btn-excel-save" id="btnSave" onclick="saveAllEx()">💾 KAYDET VE GÖNDER</button>
         </div>
         
@@ -344,9 +344,15 @@
             uName = info.ad; uFullKey = info.kod;
             
             let displayUser = uName;
+            
+            // KONTROLÖR YETKİLERİ KISITLAMASI
             if(uMail === "ekaradeniz@ziraatbank.com.tr") {
                 displayUser = `<span style="color:red; font-size:9px;">KONTROLÖR:</span> ` + uName;
                 document.getElementById('btnSave').style.display = "none";
+                document.getElementById('btnAddRow').style.display = "none"; // Satır ekle gizlendi
+            } else {
+                document.getElementById('btnSave').style.display = "block";
+                document.getElementById('btnAddRow').style.display = "block";
             }
             
             document.getElementById('userTag').innerHTML = `
@@ -565,6 +571,21 @@
     function openAkisMenu(e, gKey) {
         e.stopPropagation();
         selectedAkisGKey = gKey;
+        
+        const groupData = currentAkisData[gKey];
+        if(!groupData || groupData.length === 0) return;
+        
+        // GRUBU SİL BUTONU KONTROLÜ
+        const creatorKod = groupData[0].d.gonderen_kod;
+        const delBtn = document.getElementById('btnDeleteGroup');
+        
+        // Eğer giriş yapan kişi grubu ekleyen kişiyse ve admin DEĞİLSE silme butonunu göster.
+        if (uFullKey === creatorKod && uMail !== "ekaradeniz@ziraatbank.com.tr") {
+            delBtn.style.display = 'flex';
+        } else {
+            delBtn.style.display = 'none';
+        }
+
         const menu = document.getElementById('akis-context-menu');
         menu.style.display = 'flex';
         
@@ -633,8 +654,14 @@
         document.getElementById('akis-context-menu').style.display = 'none';
         if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
 
+        const groupData = currentAkisData[selectedAkisGKey];
+        const creatorKod = groupData[0].d.gonderen_kod;
+        
+        // Ekstra Güvenlik Kontrolü
+        if(uMail === "ekaradeniz@ziraatbank.com.tr") return alert("Kayıt silme yetkiniz bulunmamaktadır!");
+        if(uFullKey !== creatorKod) return alert("Sadece kendi eklediğiniz kayıtları silebilirsiniz!");
+
         if(confirm("Bu gruba ait tüm işlemleri kalıcı olarak silmek istediğinize emin misiniz?")) {
-            const groupData = currentAkisData[selectedAkisGKey];
             groupData.forEach(item => {
                 db.ref('transferler/canli_akis/' + item.key).remove();
             });
