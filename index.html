@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v73.6</title>
+    <title>S016 Depo Takip v73.7</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -125,7 +125,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016_DEPO_TAKIP_v73.6</div>
+    <div style="font-weight:bold;">S016_DEPO_TAKIP_v73.7</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -537,7 +537,7 @@
 
         try {
             await navigator.clipboard.writeText(bodyText);
-            alert("✅ İçerik panoya kopyalandı!\nE-posta uygulamanız açılıyor, metni mail içine yapıştırabilirsiniz.");
+            alert("✅ İçerik panoya kopyalandı!\nE-posta uygulamanız açılıyor...");
         } catch (err) {
             console.error("Panoya kopyalanamadı:", err);
             alert("Metin panoya otomatik kopyalanamadı. Lütfen manuel olarak kopyalayın.\n\n" + bodyText);
@@ -546,13 +546,14 @@
         const to = "btsahaoperasyonlariyonetimiyetkili@ziraatbank.com.tr";
         const subject = "Envanter Transferi S016 Hk.";
         
-        // CC listesini oluşturuyoruz: Temel mail adresi + (varsa) Personel İsmi (Şube ismi kaldırıldı)
-        let ccList = "btizmirsahabakim@ziraatbank.com.tr";
-        if (persIsmi) {
-            ccList += ";" + encodeURIComponent(persIsmi);
+        // CC KISMININ KESİN ÇÖZÜMÜ: YALNIZCA SABİT MAİL VE (VARSA) PERSONEL İSMİ
+        let ccText = "btizmirsahabakim@ziraatbank.com.tr";
+        if (persIsmi !== "") {
+            ccText += ";" + persIsmi;
         }
 
-        const mailtoLink = `mailto:${to}?cc=${ccList}&subject=${encodeURIComponent(subject)}`;
+        // href bağlantısını kuruyoruz. Şube ismi tamamen dışarıda bırakıldı.
+        const mailtoLink = "mailto:" + to + "?cc=" + encodeURIComponent(ccText) + "&subject=" + encodeURIComponent(subject);
         
         window.location.href = mailtoLink;
     }
