@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v73.4</title>
+    <title>S016 Depo Takip v73.6</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -125,7 +125,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016_DEPO_TAKIP_v73.4</div>
+    <div style="font-weight:bold;">S016_DEPO_TAKIP_v73.6</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -442,7 +442,7 @@
                         </div>
                         <div style="display:flex; align-items:center; gap:12px;">
                             <div style="display:flex; flex-direction:column; align-items:flex-end;">
-                                <span style="font-size:8px; opacity:0.8; font-weight:normal; letter-spacing:0.5px;">TEKNİSYEN</span>
+                                <span style="font-size:8px; opacity:0.8; font-weight:normal; letter-spacing:0.5px;">TEKNİKER</span>
                                 <span style="font-size:11px;">${gonderenIsmi}</span>
                             </div>
                             <button class="btn-circle" onclick="openAkisMenu(event, '${gKey}')">⋮</button>
@@ -518,11 +518,7 @@
         if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
 
         const groupData = currentAkisData[selectedAkisGKey];
-        const parts = selectedAkisGKey.split("|||");
-        const yer = parts[0];
         
-        const cleanSube = yer.replace(/^[\w\d]+\s+/, '').trim();
-
         let takilanlar = [];
         let alinanlar = [];
         let persIsmi = groupData[0].d.personel || "";
@@ -537,7 +533,6 @@
             }
         });
 
-        // Personel ismini pano (kopyalanan metin) içerisinden tamamen çıkardık.
         const bodyText = `Sayın Yetkili,\n\nArızalı olan cihazın değişimi gerçekleştirilmiş olup, envanter bilgileri aşağıda yer almaktadır.\n\nTakılan: ${takilanlar.join(', ')}\nArızalı : ${alinanlar.join(', ')}\n\nBilgilerinize,\nİyi çalışmalar.`;
 
         try {
@@ -551,12 +546,11 @@
         const to = "btsahaoperasyonlariyonetimiyetkili@ziraatbank.com.tr";
         const subject = "Envanter Transferi S016 Hk.";
         
-        // CC listesini oluşturuyoruz: Temel mail adresi + (varsa) Personel İsmi + Şube İsmi
+        // CC listesini oluşturuyoruz: Temel mail adresi + (varsa) Personel İsmi (Şube ismi kaldırıldı)
         let ccList = "btizmirsahabakim@ziraatbank.com.tr";
         if (persIsmi) {
             ccList += ";" + encodeURIComponent(persIsmi);
         }
-        ccList += ";" + encodeURIComponent(cleanSube);
 
         const mailtoLink = `mailto:${to}?cc=${ccList}&subject=${encodeURIComponent(subject)}`;
         
