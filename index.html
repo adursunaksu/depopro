@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v73.1</title>
+    <title>S016 Depo Takip v73.2</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -14,6 +14,8 @@
         .bg-out { background-color: #d9e9f3 !important; color: #0078d4 !important; font-weight: bold; } 
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; font-size: 11px; }
         body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Modallar */
         #transfer-modal, #sube-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2000; padding:20px; }
         .modal-box { background:white; border-radius:8px; height:85vh; display:flex; flex-direction:column; overflow:hidden; border: 1px solid #666; }
         .modal-search { padding:10px; border-bottom:1px solid #eee; }
@@ -22,15 +24,19 @@
         .sube-item { padding:15px; border-bottom:1px solid #f0f0f0; font-size:13px; color: #333; cursor: pointer; }
         .sube-item:active { background: #e8f5e9; }
         .add-btn-list { padding: 15px; background: #e8f5e9; color: var(--excell-green); text-align: center; font-weight: bold; cursor: pointer; border-top: 1px solid #ddd; }
+        
+        /* Header & Bar */
         .excel-bar { background: var(--excell-green); color: white; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
         .user-cell { background: #fff; color: #333; padding: 3px 10px; border: 1px solid #999; font-weight: bold; display: flex; align-items: center; gap: 8px; }
         .logout-btn { color: #dc3545; cursor: pointer; font-size: 9px; border-left: 1px solid #ccc; padding-left: 8px; }
+        
+        /* İçerik Alanı */
         .content { flex: 1; overflow-y: auto; padding: 5px; padding-bottom: 85px; }
         .excel-table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
         .excel-table th, .excel-table td { border: 1px solid var(--border); padding: 8px 4px; text-align: left; overflow: hidden; }
         .excel-table th { background: #ebf1de; font-size: 10px; font-weight: bold; color: #444; }
-        .depo-row { cursor: pointer; transition: background 0.2s; }
-        .depo-row:active { background: #fff3cd; }
+        
+        /* Satır Renkleri */
         .row-waiting { background-color: #f8d7da !important; }
         .row-onay { background-color: #fff3cd !important; }
         .row-done { background-color: #d4edda !important; color: #444; }
@@ -38,93 +44,89 @@
         .bg-waiting { background: #dc3545; }
         .bg-onay { background: #ff9800; }
         .bg-done { background: #28a745; }
+
+        /* Form Elemanları */
         .excel-row-container { display: flex; border: 1px solid #ccc; background: #fff; margin-bottom: 3px; min-height: 44px; align-items: center; border-radius: 4px; overflow: hidden; }
         .type-select { width: 60px; height: 44px; border: none; border-right: 1px solid #ccc; font-weight: bold; text-align: center; outline: none; }
         .urun-select { flex: 2; height: 44px; border: none; padding-left: 5px; font-weight: bold; outline: none; background: transparent; }
         .scan-container { position: relative; display: flex; align-items: center; flex: 2; height: 44px; }
         .barkod-input { width: 100%; height: 100%; border: none; border-right: 1px solid #ccc; padding: 0 30px 0 10px; font-size: 13px; outline: none; }
-        .kp-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
-        .kp-input-large { width: 100%; border: 1px solid #ddd; padding: 4px 25px 4px 4px; border-radius: 2px; height: 26px; font-size: 10px; }
         .magnifier-btn { position: absolute; right: 5px; cursor: pointer; font-size: 18px; color: var(--excell-green); user-select: none; }
-        .excel-actions { display: flex; gap: 5px; margin-top: 8px; }
-        .btn-excel-add { flex: 1; padding: 12px; border: 1px solid #ccc; font-weight: bold; background: white; border-radius: 4px; cursor: pointer; }
-        .btn-excel-save { flex: 1; padding: 12px; background: var(--excell-green); color: white; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; }
+        .kp-input-large { width: 100%; border: 1px solid #ddd; padding: 4px 25px 4px 4px; border-radius: 2px; height: 26px; font-size: 10px; }
+        
+        /* Alt Navigasyon */
         .excel-nav { height: 65px; background: #fff; display: flex; position: fixed; bottom: 0; width: 100%; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); padding: 8px 10px; gap: 8px; z-index: 2500; }
         .excel-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; transition: all 0.2s ease; font-size: 12px; }
-        .excel-nav-item.active { background: #e8f5e9; color: var(--excell-green); font-weight: bold; border: 2px solid var(--excell-green); box-shadow: 0 3px 8px rgba(33,115,70,0.3); transform: translateY(-3px); }
+        .excel-nav-item.active { background: #e8f5e9; color: var(--excell-green); font-weight: bold; border: 2px solid var(--excell-green); box-shadow: 0 3px 8px rgba(33,115,70,0.3); }
+
+        /* Login */
         #login-screen { position: fixed; inset: 0; background: var(--excell-green); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .rem-box { margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="login-screen">
     <h2 style="letter-spacing: 2px;">S016 DEPO TAKİP</h2>
-    <input type="email" id="email" placeholder="E-posta" style="width:80%; margin-bottom:10px; padding:12px; border-radius:4px; border:none;">
-    <input type="password" id="pass" placeholder="Şifre" style="width:80%; margin-bottom:10px; padding:12px; border-radius:4px; border:none;">
-    <label class="rem-box">
+    <input type="email" id="email" placeholder="E-posta" style="width:80%; margin-bottom:10px; padding:12px; border-radius:4px;">
+    <input type="password" id="pass" placeholder="Şifre" style="width:80%; margin-bottom:10px; padding:12px; border-radius:4px;">
+    <label style="margin-bottom:15px; display:flex; align-items:center; gap:8px;">
         <input type="checkbox" id="rem-check"> Beni Hatırla
     </label>
     <button onclick="login()" style="width:80%; padding:15px; font-weight:bold; background:white; color:var(--excell-green); border:none; border-radius:4px;">GİRİŞ YAP</button>
 </div>
 
-<div id="transfer-modal">
-    <div class="modal-box">
-        <div class="modal-search">
-            <h3 id="transfer-item-title" style="margin:0 0 10px 0; color:var(--excell-green);">Ürün Gönder</h3>
-            <input type="text" id="transfer-ara" placeholder="Hedef Araç veya Şube ara..." oninput="filterTransferList()">
-        </div>
-        <div class="modal-list" id="transfer-list-body"></div>
-        <button onclick="closeTransferModal()" style="padding:15px; background:#444; color:white; border:none; font-weight:bold;">VAZGEÇ</button>
-    </div>
-</div>
-
-<div id="sube-modal">
-    <div class="modal-box">
-        <div class="modal-search"><input type="text" id="sube-ara" placeholder="Şube ara (Kod veya İsim)..." oninput="filterSubeler()"></div>
-        <div class="modal-list" id="modal-list-body"></div>
-        <div class="add-btn-list" onclick="manualAdd()">➕ LİSTEDE OLMAYAN ŞUBEYİ EKLE</div>
-        <button onclick="closeModal()" style="padding:15px; background:#444; color:white; border:none; font-weight:bold;">VAZGEÇ</button>
-    </div>
-</div>
-
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016_DEPO_TAKIP_v73.1</div>
+    <div style="font-weight:bold;">S016 v73.2</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
 <div class="content">
     <div id="p-islem" class="app-page">
         <div style="background:#fff; padding:10px; border:1px solid #ccc; margin-bottom:5px; border-radius:4px;">
-            <input type="text" id="target-sube" placeholder="Hedef Lokasyon Seçin" readonly onclick="openModal()" style="width:100%; margin-bottom:10px; padding:12px; background:#fffde7; border:1px solid #ccc; font-weight:bold; border-radius:4px; color: #000;">
-            <label style="display:flex; align-items:center; gap:10px; color:var(--excell-green); font-weight:bold;">
-                <input type="checkbox" id="to-my-truck" onchange="toggleTruckMode()"> 🚛 ARACIMA TRANSFER ET
-            </label>
+            <input type="text" id="target-sube" placeholder="Hedef Lokasyon Seçin" readonly onclick="openModal()" style="width:100%; margin-bottom:10px; padding:12px; background:#fffde7; border:1px solid #ccc; font-weight:bold; color:#000;">
+            <label><input type="checkbox" id="to-my-truck" onchange="toggleTruckMode()"> 🚛 ARACIMA TRANSFER ET</label>
         </div>
         <div id="items-container"></div>
-        <div id="action-area" class="excel-actions">
-            <button class="btn-excel-add" onclick="addRowEx()">➕ Satır Ekle</button>
-            <button class="btn-excel-save" id="btnSave" onclick="saveAllEx()">💾 KAYDET VE GÖNDER</button>
+        <div class="excel-actions" style="display:flex; gap:5px; margin-top:10px;">
+            <button onclick="addRowEx()" style="flex:1; padding:12px;">➕ Satır Ekle</button>
+            <button onclick="saveAllEx()" style="flex:1; padding:12px; background:var(--excell-green); color:white; border:none; font-weight:bold;">💾 KAYDET</button>
         </div>
     </div>
+
     <div id="p-akis" class="app-page" style="display:none;">
-        <div style="padding:10px; background:#fff; border-bottom:1px solid #ccc; margin-bottom:5px; position:sticky; top:0; z-index:10;">
-            <input type="text" id="akis-ara" placeholder="Lokasyon, Ürün, Barkod veya Asistan Ara..." oninput="filterAkis()" style="width:100%; padding:12px; border:2px solid var(--excell-green); border-radius:4px; font-size:13px; outline:none; font-weight:bold;">
-        </div>
+        <input type="text" id="akis-ara" placeholder="Ara..." oninput="filterAkis()" style="width:100%; padding:10px; margin-bottom:5px;">
         <div id="akis-container"></div>
     </div>
+
     <div id="p-depo" class="app-page" style="display:none;">
         <div id="depoExList"></div>
+    </div>
+</div>
+
+<div id="sube-modal">
+    <div class="modal-box">
+        <div class="modal-search"><input type="text" id="sube-ara" placeholder="Şube ara..." oninput="filterSubeler()"></div>
+        <div class="modal-list" id="modal-list-body"></div>
+        <button onclick="closeModal()" style="padding:15px; background:#444; color:white;">KAPAT</button>
+    </div>
+</div>
+
+<div id="transfer-modal">
+    <div class="modal-box">
+        <div class="modal-search"><input type="text" id="transfer-ara" placeholder="Hedef Ara..." oninput="filterTransferList()"></div>
+        <div class="modal-list" id="transfer-list-body"></div>
+        <button onclick="closeTransferModal()" style="padding:15px; background:#444; color:white;">İPTAL</button>
     </div>
 </div>
 
 <div class="excel-nav">
     <div class="excel-nav-item active" onclick="tabEx('islem', this)">📝 Form</div>
     <div class="excel-nav-item" onclick="tabEx('akis', this)">📊 Akış</div>
-    <div class="excel-nav-item" onclick="tabEx('depo', this)">📦 Depolar</div>
+    <div class="excel-nav-item" onclick="tabEx('depo', this)">📦 Depo</div>
 </div>
 
 <script>
+    // Firebase ve Temel Ayarlar
     const firebaseConfig = {
         apiKey: "AIzaSyAJcpDXuUiW2b-YHKNsIELtRi0AR96WPeY",
         authDomain: "depotakippro.firebaseapp.com",
@@ -138,8 +140,6 @@
     const db = firebase.database();
     
     let uName = ""; let uFullKey = ""; let uMail = "";
-    let selectedItemForTransfer = null;
-
     const aracMap = {
         "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
         "dokocadag@ziraatbank.com.tr": { ad: "DOĞAÇ", kod: "s573 Doğaç" },
@@ -148,204 +148,131 @@
         "ahaksu@ziraatbank.com.tr": { ad: "HALUK", kod: "s528 Haluk" }
     };
 
-    const staticSubeler = [
-        "S016 İzmir Saha Depo", "68 Bergama-İzmir Şubesi", "137 İzmir Şubesi", "138 Urla-İzmir Şubesi", 
-        "139 Bayındır-İzmir Şubesi", "140 Tire-İzmir Şubesi", "141 Çeşme-İzmir Şubesi", "142 Seferihisar-İzmir Şubesi", 
-        "143 Karaburun-İzmir Şubesi", "145 Kemalpaşa-İzmir Şubesi", "146 Menemen-İzmir Şubesi", "188 Manisa Şubesi", 
-        "189 Akhisar-Manisa Şubesi", "190 Alaşehir-Manisa Şubesi", "191 Demirci-Manisa Şubesi", "192 Salihli-Manisa Şubesi", 
-        "193 Soma-Manisa Şubesi", "194 Kırkağaç-Manisa Şubesi", "195 Turgutlu-Manisa Şubesi", "196 Kula-Manisa Şubesi", 
-        "197 Gördes-Manisa Şubesi", "221 Ödemiş-İzmir Şubesi", "317 Torbalı-İzmir Şubesi", "344 Foça-İzmir Şubesi", 
-        "386 Kınık-İzmir Şubesi", "387 Dikili-İzmir Şubesi", "410 Çankaya-İzmir Şubesi", "411 Karşıyaka-İzmir Şubesi", 
-        "422 Kiraz-İzmir Şubesi", "561 Selçuk-İzmir Şubesi", "562 Selendi-Manisa Şubesi", "572 Sarıgöl-Manisa Şubesi", 
-        "590 Alaçatı Çeşme-İzmir Şubesi", "615 Bornova-İzmir Şubesi", "622 Saruhanlı-Manisa Şubesi", "678 Eşrefpaşa-İzmir Şubesi", 
-        "711 Buca-İzmir Şubesi", "712 Alsancak-İzmir Şubesi", "714 Aliağa-İzmir Şubesi", "726 Narlıdere-İzmir Şubesi", 
-        "730 Ahmetli-Manisa Şubesi", "735 Gölmarmara-Manisa Şubesi", "776 Konak-İzmir Şubesi", "791 Menderes-İzmir Şubesi", 
-        "800 Çiğli-İzmir Şubesi", "803 Bayraklı-İzmir Şubesi", "804 Hatay-İzmir Şubesi", "807 Göztepe-İzmir Şubesi", 
-        "808 Balçova-İzmir Şubesi", "812 Karabağlar-İzmir Şubesi", "814 Üçyol-İzmir Şubesi", "869 Köprübaşı-Manisa Şubesi", 
-        "884 26 Ağustos-İzmir Şubesi", "902 Şirinyer-İzmir Şubesi", "904 Şemikler-İzmir Şubesi", "911 Altındağ-İzmir Şubesi", 
-        "928 Gümüşpala-İzmir Şubesi", "934 Denizbostanlı-İzmir Şubesi", "974 Gümüldür Menderes-İzmir Şubesi", 
-        "975 MTK Çarşı-İzmir Şubesi", "999 Çamdibi-İzmir Şubesi", "1000 Gaziemir-İzmir Şubesi", "1021 Beydağ-İzmir Şubesi", 
-        "1043 Yeşilyurt-İzmir Şubesi", "1089 Alaybey-İzmir Şubesi", "1203 Üçkuyular-İzmir Şubesi", "1204 Kahramanlar-İzmir Şubesi", 
-        "1256 Mesir-Manisa Şubesi", "1333 Efes-İzmir Şubesi", "1403 Kazımdirik-İzmir Şubesi", "1446 Ege Tıp-İzmir Şubesi", 
-        "1506 9 Eylül Üniversitesi-İzmir Şubesi", "1533 Fahrettin Altay-İzmir Şubesi", "1625 Güzelbahçe-İzmir Şubesi", 
-        "1743 Işıkkent-İzmir Şubesi", "1750 İzmir Para Grup Merkezi", "1751 İzmir Kurumsal Şube", "1768 Atatürk OSB-İzmir Ticari Şube", 
-        "1778 Yeni Gıda Çarşısı-İzmir Şubesi", "1815 İzmir Bölge Yöneticiliği-Konak", "1816 İzmir Bölge Yöneticiliği-Karşıyaka", 
-        "1840 Manisa Bölge Yöneticiliği", "1903 Girne Bulvarı-İzmir Şubesi", "1938 Manisa Ticari Şube", "1958 Karabağlar-İzmir Ticari Şube", 
-        "1961 Bozyaka-İzmir Şubesi", "1972 Ayrancılar-İzmir Şubesi", "1984 Manavkuyu-İzmir Şubesi", "1987 Yenişakran Aliağa-İzmir Şubesi", 
-        "1992 Gediz Mahallesi-İzmir Şubesi", "1993 Yıkıkkemer-İzmir Şubesi", "2081 Yeni Girne-İzmir Şubesi", "2088 Şehitler-Manisa Şubesi", 
-        "2129 Atakent-İzmir Şubesi", "2137 Osmangazi Bayraklı-İzmir Şubesi", "2152 Ataşehir-İzmir Şubesi", "2159 İzmir Caddesi-Manisa Şubesi", 
-        "2170 Hasan Tahsin Buca-İzmir Şubesi", "2267 Kemalpaşa-İzmir Ticari Şube", "2319 Cumhuriyet Salihli-Manisa Şubesi", 
-        "2335 Bornova Ata-İzmir Şubesi", "2408 Şehzadeler-Manisa Şubesi", "2425 Seydiköy Gaziemir-İzmir Şubesi", 
-        "2436 Menderes Caddesi-İzmir Şubesi", "2474 Çağlak Akhisar-Manisa Şubesi", "2477 Ulukent Menemen-İzmir Şubesi", 
-        "2494 4. Sanayi Sitesi-İzmir Şubesi", "2496 Ulus Meydanı Ödemiş-İzmir Şubesi", "2504 7 Eylül Turgutlu-Manisa Şubesi", 
-        "2514 Çandarlı Dikili-İzmir Şubesi", "2515 1. Sanayi-İzmir Şubesi", "2566 Ertuğrul Mahallesi Torbalı-İzmir Şubesi", 
-        "2630 Yeşilova Bornova-İzmir Şubesi", "2642 Yunusemre-Manisa Şubesi", "2673 Bakırçay Bergama-İzmir Şubesi", 
-        "2697 Atatürk Hastanesi-İzmir Şubesi"
-    ];
+    const staticSubeler = ["S016 İzmir Saha Depo", "68 Bergama-İzmir", "137 İzmir Merkez", "138 Urla-İzmir", "317 Torbalı-İzmir", "1750 İzmir PGM"]; 
     let dynamicSubeler = [];
-    
+
+    // --- KRİTİK BÖLÜM: BARKOD VE GİRİŞ KONTROLÜ ---
     window.onload = function() {
         const savedMail = localStorage.getItem('s016_mail');
         const savedPass = localStorage.getItem('s016_pass');
-        const urlParams = new URLSearchParams(window.location.search);
-        const barcode = urlParams.get('barcode');
+        const barcode = new URLSearchParams(window.location.search).get('barcode');
 
         if(savedMail && savedPass) {
             document.getElementById('email').value = savedMail;
             document.getElementById('pass').value = savedPass;
             document.getElementById('rem-check').checked = true;
-            // Sigorta: URL'de barkod varsa beklemeden giriş yap
-            if (barcode) { login(); }
+            login(true); // Sessiz giriş
         }
     };
 
-    function checkUrlForBarcode() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const barcode = urlParams.get('barcode');
-        const targetId = urlParams.get('target');
-        if (barcode) {
-            setTimeout(() => {
-                if(targetId && targetId.startsWith('kp-')) {
-                    const dbKey = targetId.replace('kp-', '');
-                    db.ref('transferler/canli_akis/' + dbKey).update({kp: barcode});
-                    tabEx('akis', document.querySelectorAll('.excel-nav-item')[1]);
-                } else {
-                    const inputs = document.querySelectorAll('.barkod-input');
-                    let targetInput = null;
-                    for (let i = 0; i < inputs.length; i++) {
-                        if (inputs[i].value === "") { targetInput = inputs[i]; break; }
-                    }
-                    if (targetInput) { targetInput.value = barcode; } 
-                    else { addRowEx("ÇIKIŞ"); setTimeout(() => { const ni = document.querySelectorAll('.barkod-input'); ni[ni.length-1].value = barcode; }, 100); }
-                }
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }, 500);
-        }
-    }
-
-    function startScannerEx(targetInputId) {
-        const callbackUrl = window.location.origin + window.location.pathname + "?target=" + targetInputId + "&barcode={code}";
-        const intentUrl = "intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;S.browser_fallback_url=" + encodeURIComponent(callbackUrl) + ";end";
-        window.location.href = intentUrl;
-    }
-
-    function formatKP(text) {
-        if(!text) return "";
-        let parts = text.split(' ');
-        if(/^\d+$/.test(parts[0])) {
-            return parts.slice(1).join(' ').replace(/-İzmir Şubesi/gi, '').replace(/-Manisa Şubesi/gi, '').replace(/Şubesi/gi, '').trim();
-        }
-        return text; 
-    }
-
-    function login() {
+    function login(isAuto = false) {
         const e = document.getElementById('email').value.trim().toLowerCase();
         const p = document.getElementById('pass').value;
-        const isRem = document.getElementById('rem-check').checked;
         firebase.auth().signInWithEmailAndPassword(e, p).then(u => {
-            if(isRem) { localStorage.setItem('s016_mail', e); localStorage.setItem('s016_pass', p); }
-            uMail = e;
-            const info = aracMap[e] || { ad: e.split('@')[0].toUpperCase(), kod: e.split('@')[0] };
-            uName = info.ad; uFullKey = info.kod;
+            if(document.getElementById('rem-check').checked) {
+                localStorage.setItem('s016_mail', e); localStorage.setItem('s016_pass', p);
+            }
+            uMail = e; uName = (aracMap[e] || {ad: e.split('@')[0]}).ad; uFullKey = (aracMap[e] || {kod: e.split('@')[0]}).kod;
             document.getElementById('userTag').innerHTML = `${uName} <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>`;
             document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('items-container').innerHTML = "";
-            addRowEx("ÇIKIŞ"); addRowEx("GİRİŞ");
-            init();
-            checkUrlForBarcode(); // Giriş sonrası barkod kontrolü
-        }).catch(() => { if(!new URLSearchParams(window.location.search).get('barcode')) alert("Giriş Hatalı!"); });
+            initApp();
+            checkUrlForBarcode();
+        }).catch(err => { if(!isAuto) alert("Hata: " + err.message); });
     }
 
-    function logout() { if(confirm("Oturum kapatılsın mı?")) { firebase.auth().signOut().then(() => { localStorage.clear(); location.reload(); }); } }
+    function checkUrlForBarcode() {
+        const params = new URLSearchParams(window.location.search);
+        const barcode = params.get('barcode');
+        const target = params.get('target');
 
-    function init() {
-        db.ref('ayarlar/urun_listesi').on('value', snap => { updateAllSelects(); });
-        db.ref('ayarlar/sube_listesi').on('value', snap => { let list = []; snap.forEach(i => list.push(i.val())); dynamicSubeler = list; updateSubeCounter(); });
+        if(barcode) {
+            setTimeout(() => {
+                if(target && target.startsWith('kp-')) {
+                    const key = target.replace('kp-', '');
+                    db.ref('transferler/canli_akis/' + key).update({kp: barcode});
+                    tabEx('akis', document.querySelectorAll('.excel-nav-item')[1]);
+                } else {
+                    addRowEx("ÇIKIŞ");
+                    const inputs = document.querySelectorAll('.barkod-input');
+                    inputs[inputs.length-1].value = barcode;
+                }
+                // URL temizle
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }, 1000);
+        }
+    }
+
+    function startScannerEx(targetId) {
+        // Binary Eye'a git ve geri bu sayfaya barkodla dön
+        const callback = window.location.origin + window.location.pathname + "?target=" + targetId + "&barcode={code}";
+        window.location.href = "intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;S.browser_fallback_url=" + encodeURIComponent(callback) + ";end";
+    }
+
+    // --- UYGULAMA FONKSİYONLARI ---
+    function initApp() {
         db.ref('transferler/canli_akis').on('value', snap => {
-            const container = document.getElementById('akis-container'); if(!container) return;
-            const groupedData = {}; const groupOrder = [];
+            const cont = document.getElementById('akis-container'); cont.innerHTML = "";
             snap.forEach(i => {
-                const d = i.val(); const key = i.key; const groupKey = d.yer + "|||" + (d.saat || "Belirtilmemiş");
-                if(!groupedData[groupKey]) groupedData[groupKey] = [];
-                groupedData[groupKey].unshift({ key, d });
-                if(groupOrder.indexOf(groupKey) > -1) groupOrder.splice(groupOrder.indexOf(groupKey), 1);
-                groupOrder.unshift(groupKey);
-            });
-            let fullHtml = "";
-            groupOrder.forEach(gKey => {
-                const parts = gKey.split("|||"); const yer = parts[0]; const saat = parts[1];
-                let rowsHtml = "";
-                groupedData[gKey].forEach(item => {
-                    const key = item.key; const d = item.d; const isD = d.status === "YAPILDI"; const isOnay = d.status === "ONAY BEKLIYOR";
-                    let actionHtml = isOnay ? (d.yer === uFullKey ? `<button class="btn-status bg-onay" onclick="approveTransfer('${key}')">KABUL ET</button>` : `<span style="color:orange;">ONAYDA</span>`) : `<button class="btn-status ${isD?'bg-done':'bg-waiting'}" onclick="db.ref('transferler/canli_akis/${key}').update({status:('${d.status}'==='BEKLEMEDE'?'YAPILDI':'BEKLEMEDE')})">${isD?'YAPILDI':'BEKLİYOR'}</button>`;
-                    let kpCell = (d.tip === "ÇIKIŞ" || d.tip === "VER") ? `<input type="text" class="kp-input-large" readonly style="background:#eee;" value="${d.kp||''}">` : `<div class="kp-wrapper"><input type="text" id="kp-${key}" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})" value="${d.kp||''}"> <span class="magnifier-btn" onclick="startScannerEx('kp-${key}')">🔍</span></div>`;
-                    rowsHtml += `<tr class="${isD?'row-done':(isOnay?'row-onay':'row-waiting')}"><td><b>${d.urun}</b><br><small>${d.barkod}${isD?'✅':''}</small></td><td>${d.gonderen}</td><td>${kpCell}</td><td>${actionHtml}</td></tr>`;
-                });
-                fullHtml += `<div style="margin-bottom:15px; border:1px solid var(--excell-green); border-radius:4px; background:#fff; overflow:hidden;"><div style="background:var(--excell-green); color:white; padding:8px 10px; font-weight:bold;">🏢 ${yer} <span style="float:right; font-size:10px;">${saat}</span></div><table class="excel-table">${rowsHtml}</table></div>`;
-            });
-            container.innerHTML = fullHtml;
-        });
-        db.ref('depolar').on('value', snap => {
-            const c = document.getElementById('depoExList'); c.innerHTML = "";
-            snap.forEach(d => {
-                let rws = ""; d.forEach(r => { const v = r.val(); rws += `<tr class="${d.key === uFullKey?'depo-row':''}" onclick="${d.key === uFullKey?`openTransferModal('${v.urun}','${v.barkod}')`:''}"><td>${v.urun}</td><td>${v.barkod}</td></tr>`; });
-                c.innerHTML += `<div style="margin-bottom:10px; border:1px solid #ccc;"><div style="background:#217346; color:white; padding:8px; font-weight:bold;">📦 ${d.key} Arac Depo</div><table class="excel-table">${rws}</table></div>`;
+                const d = i.val(); const key = i.key;
+                const row = `<div class="excel-row-container" style="padding:5px; font-size:10px;">
+                    <div style="flex:1"><b>${d.urun}</b><br>${d.barkod}</div>
+                    <div style="flex:1">${d.yer}</div>
+                    <div style="flex:1"><input type="text" value="${d.kp||''}" id="kp-${key}" class="kp-input-large"></div>
+                    <div style="width:40px" onclick="startScannerEx('kp-${key}')">🔍</div>
+                </div>`;
+                cont.insertAdjacentHTML('afterbegin', row);
             });
         });
-        updateSubeCounter();
+        addRowEx();
     }
 
     function addRowEx(type = "ÇIKIŞ") {
-        const rowId = 'brk-' + Math.random().toString(36).substr(2, 9);
-        const div = document.createElement('div'); div.className = "excel-row-container";
-        div.innerHTML = `<select class="type-select ${type==='ÇIKIŞ'?'bg-out':'bg-in'}" onchange="this.classList.toggle('bg-out', this.value==='ÇIKIŞ'); this.classList.toggle('bg-in', this.value==='GİRİŞ')"><option value="ÇIKIŞ" ${type==='ÇIKIŞ'?'selected':''}>VER</option><option value="GİRİŞ" ${type==='GİRİŞ'?'selected':''}>AL</option></select><div class="scan-container"><input type="number" id="${rowId}" placeholder="Barkod..." class="barkod-input"><span class="magnifier-btn" onclick="startScannerEx('${rowId}')">🔍</span></div><select class="urun-select" onchange="checkNewUrun(this)"></select>`;
-        document.getElementById('items-container').appendChild(div); updateAllSelects();
+        const id = 'brk-' + Math.random().toString(36).substr(2, 5);
+        const html = `<div class="excel-row-container">
+            <select class="type-select ${type==='ÇIKIŞ'?'bg-out':'bg-in'}"><option value="ÇIKIŞ">VER</option><option value="GİRİŞ">AL</option></select>
+            <div class="scan-container"><input type="number" id="${id}" class="barkod-input" placeholder="Barkod..."><span class="magnifier-btn" onclick="startScannerEx('${id}')">🔍</span></div>
+            <select class="urun-select"><option>Pc</option><option>Monitör</option><option>Yazıcı</option></select>
+        </div>`;
+        document.getElementById('items-container').insertAdjacentHTML('beforeend', html);
     }
-    function manualAdd() { const n = prompt("Yeni Şube?"); if(n) db.ref('ayarlar/sube_listesi').push(n); }
-    function openTransferModal(urun, barkod) { selectedItemForTransfer = { urun, barkod }; document.getElementById('transfer-item-title').innerText = "Gönder: " + urun; document.getElementById('transfer-modal').style.display = 'block'; filterTransferList(); }
-    function closeTransferModal() { document.getElementById('transfer-modal').style.display = 'none'; }
-    function openModal() { document.getElementById('sube-modal').style.display = 'block'; filterSubeler(); }
-    function closeModal() { document.getElementById('sube-modal').style.display = 'none'; }
-    function checkNewUrun(sel) { if(sel.value === "ADD_NEW") { const n = prompt("Yeni Envanter?"); if(n) { db.ref('ayarlar/urun_listesi').push(n); setTimeout(() => sel.value = n, 500); } else sel.selectedIndex = 0; } }
-    function filterTransferList() {
-        const ara = document.getElementById('transfer-ara').value.toLocaleUpperCase('tr-TR');
-        const list = document.getElementById('transfer-list-body'); list.innerHTML = "";
-        Object.values(aracMap).forEach(a => { if(a.kod !== uFullKey && (a.ad.includes(ara) || a.kod.toLocaleUpperCase('tr-TR').includes(ara))) { const d = document.createElement('div'); d.className = "sube-item"; d.innerHTML = `🚛 <b>${a.ad}</b> (${a.kod})`; d.onclick = () => confirmTransfer(a.kod); list.appendChild(d); } });
-        [...staticSubeler, ...dynamicSubeler].filter(s => s.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => { const d = document.createElement('div'); d.className = "sube-item"; d.innerText = "🏢 " + s; d.onclick = () => confirmTransfer(s); list.appendChild(d); });
-    }
-    function confirmTransfer(target) { if(!selectedItemForTransfer) return; const isInterCar = Object.values(aracMap).some(a => a.kod === target); const data = { gonderen: uName, yer: target, tip: "ÇIKIŞ", barkod: selectedItemForTransfer.barkod, urun: selectedItemForTransfer.urun, status: isInterCar ? "ONAY BEKLIYOR" : "BEKLEMEDE", kp: formatKP(target), saat: new Date().toLocaleTimeString('tr-TR'), gonderen_kod: uFullKey }; db.ref('transferler/canli_akis').push(data); closeTransferModal(); tabEx('akis', document.querySelectorAll('.excel-nav-item')[1]); }
-    function approveTransfer(key) { db.ref('transferler/canli_akis/' + key).once('value', s => { const d = s.val(); db.ref('depolar/' + d.gonderen_kod).once('value', ds => { ds.forEach(item => { if(item.val().barkod === d.barkod) item.ref.remove(); }); }); db.ref('depolar/' + uFullKey).push({ urun: d.urun, barkod: d.barkod }); db.ref('transferler/canli_akis/' + key).update({status: "YAPILDI"}); }); }
-    function updateAllSelects() {
-        db.ref('ayarlar/urun_listesi').once('value', snap => {
-            let list = ["Cüzdan yazıcı","Pc","Tarayıcı","Monitör","Ip telefon","Switch","Router","Sunucu","Nvr","Laptop","Lazer yazıcı","Kamera"]; snap.forEach(i => { if(!list.includes(i.val())) list.push(i.val()); });
-            document.querySelectorAll('.urun-select').forEach(sel => { const old = sel.value; sel.innerHTML = list.map(u => `<option value="${u}">${u}</option>`).join('') + `<option value="ADD_NEW" style="color:green;font-weight:bold;">➕ YENİ EKLE</option>`; if(old && list.includes(old)) sel.value = old; });
+
+    function saveAllEx() {
+        const target = document.getElementById('target-sube').value;
+        if(!target && !document.getElementById('to-my-truck').checked) return alert("Hedef seç!");
+        document.querySelectorAll('.excel-row-container').forEach(row => {
+            const b = row.querySelector('.barkod-input')?.value;
+            if(b) {
+                db.ref('transferler/canli_akis').push({
+                    urun: row.querySelector('.urun-select').value,
+                    barkod: b,
+                    yer: target,
+                    gonderen: uName,
+                    saat: new Date().toLocaleTimeString()
+                });
+            }
         });
+        alert("Kaydedildi");
+        document.getElementById('items-container').innerHTML = ""; addRowEx();
     }
-    async function saveAllEx() {
-        const target = document.getElementById('target-sube').value; const toMyTruck = document.getElementById('to-my-truck').checked;
-        if(!toMyTruck && (!target || target === "Hedef Lokasyon Seçin")) return alert("Lokasyon seç!");
-        let addedCount = 0;
-        Array.from(document.querySelectorAll('.excel-row-container')).reverse().forEach(row => {
-            const b = String(row.querySelector('.barkod-input').value).trim(); const u = row.querySelector('.urun-select').value; const t = row.querySelector('.type-select').value;
-            if(b) { if(toMyTruck) { db.ref('depolar/' + uFullKey).push({ urun: u, barkod: b }); } else { db.ref('transferler/canli_akis').push({ gonderen: uName, yer: target, tip: t, barkod: b, urun: u, status: "BEKLEMEDE", kp: (t === "ÇIKIŞ" ? formatKP(target) : ""), saat: new Date().toLocaleTimeString('tr-TR'), gonderen_kod: uFullKey }); } addedCount++; }
-        });
-        if (addedCount > 0) { document.getElementById('items-container').innerHTML = ""; addRowEx("ÇIKIŞ"); addRowEx("GİRİŞ"); alert("Kaydedildi."); }
+
+    function tabEx(id, el) {
+        document.querySelectorAll('.app-page').forEach(p => p.style.display='none');
+        document.getElementById('p-'+id).style.display='block';
+        document.querySelectorAll('.excel-nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
     }
+
+    function openModal() { document.getElementById('sube-modal').style.display='block'; filterSubeler(); }
+    function closeModal() { document.getElementById('sube-modal').style.display='none'; }
     function filterSubeler() {
-        const ara = document.getElementById('sube-ara').value.toLocaleUpperCase('tr-TR'); const list = document.getElementById('modal-list-body'); list.innerHTML = "";
-        [...staticSubeler, ...dynamicSubeler].filter(s => s.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => { const d = document.createElement('div'); d.className = "sube-item"; d.innerText = s; d.onclick = () => { document.getElementById('target-sube').value = s; closeModal(); }; list.appendChild(d); });
-    }
-    function toggleTruckMode() { const isT = document.getElementById('to-my-truck').checked; document.getElementById('target-sube').value = isT ? uFullKey : ""; }
-    function updateSubeCounter() { document.getElementById('target-sube').placeholder = `Hedef Lokasyon (${staticSubeler.length + dynamicSubeler.length})`; }
-    function tabEx(id, el) { document.querySelectorAll('.app-page').forEach(p => p.style.display = 'none'); document.getElementById('p-'+id).style.display = 'block'; document.querySelectorAll('.excel-nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
-    function filterAkis() {
-        const ara = document.getElementById('akis-ara').value.toLocaleUpperCase('tr-TR');
-        document.querySelectorAll('#akis-container > div').forEach(wrapper => {
-            let has = false; const head = wrapper.querySelector('div').innerText.toLocaleUpperCase('tr-TR');
-            wrapper.querySelectorAll('tbody tr').forEach(row => { if (head.includes(ara) || row.innerText.toLocaleUpperCase('tr-TR').includes(ara)) { row.style.display = ''; has = true; } else row.style.display = 'none'; });
-            wrapper.style.display = (has || head.includes(ara)) ? '' : 'none';
+        const list = document.getElementById('modal-list-body'); list.innerHTML = "";
+        staticSubeler.forEach(s => {
+            const d = document.createElement('div'); d.className="sube-item"; d.innerText=s;
+            d.onclick=()=>{ document.getElementById('target-sube').value=s; closeModal(); };
+            list.appendChild(d);
         });
     }
+    function logout() { localStorage.clear(); location.reload(); }
 </script>
 </body>
 </html>
