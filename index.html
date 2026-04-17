@@ -538,7 +538,8 @@
         const parts = selectedAkisGKey.split("|||");
         const yer = parts[0];
         
-        const cleanSube = yer.replace(/^[\w\d]+\s+/, '');
+        // GÜNCELLEME: Şube numarasını attıktan sonra sonundaki "Şubesi", "Ticari Şube" veya "Şube" ifadelerini de kaldırıyoruz.
+        const cleanSube = yer.replace(/^[\w\d]+\s+/, '').replace(/\s+(Şubesi|Ticari Şube|Şube)/gi, '');
 
         let takilanlar = [];
         let alinanlar = [];
@@ -564,7 +565,7 @@
         }
 
         const to = "btsahaoperasyonlariyonetimiyetkili@ziraatbank.com.tr";
-        // CC'ye temizlenmiş şube ismi eklendi
+        // CC'ye son halini almış olan şube ismi eklendi (örneğin sadece "Dikili-İzmir" olarak düşecek)
         const cc = `btizmirsahabakim@ziraatbank.com.tr,${cleanSube}`;
         // Konu "Envanter Transferi S016 Hk." olarak sabitlendi
         const subject = "Envanter Transferi S016 Hk.";
