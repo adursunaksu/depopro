@@ -73,6 +73,12 @@
 
         #login-screen { position: fixed; inset: 0; background: var(--excell-green); z-index: 4000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
         .rem-box { margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
+
+        /* Bağlam (Context) Menüsü Stilleri */
+        #akis-context-menu { position: fixed; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 5000; display: none; flex-direction: column; min-width: 180px; overflow: hidden; }
+        .context-menu-item { padding: 12px 15px; font-size: 13px; font-weight: bold; color: #333; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #eee; }
+        .context-menu-item:active { background: #e8f5e9; }
+        .context-menu-item:last-child { border-bottom: none; color: #dc3545; }
     </style>
 </head>
 <body>
@@ -85,6 +91,11 @@
         <input type="checkbox" id="rem-check"> Beni Hatırla
     </label>
     <button onclick="login()" style="width:80%; padding:15px; font-weight:bold; background:white; color:var(--excell-green); border:none; border-radius:4px;">GİRİŞ YAP</button>
+</div>
+
+<div id="akis-context-menu">
+    <div class="context-menu-item" onclick="sendAkisMail()">📧 E-Posta Gönder (Panoya Kopyala)</div>
+    <div class="context-menu-item" onclick="deleteAkisGroup()">🗑️ Grubu Firebase'den Sil</div>
 </div>
 
 <div id="transfer-modal">
@@ -169,6 +180,10 @@
     let html5QrcodeScannerEx = null;
     let flashOn = false;
 
+    let currentAkisData = {};
+    let selectedAkisGKey = "";
+    let pressTimer;
+
     const aracMap = {
         "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
         "dokocadag@ziraatbank.com.tr": { ad: "DOĞAÇ", kod: "s573 Doğaç" },
@@ -212,6 +227,17 @@
         "2697 Atatürk Hastanesi-İzmir Şubesi"
     ];
     let dynamicSubeler = [];
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#akis-context-menu')) {
+            document.getElementById('akis-context-menu').style.display = 'none';
+        }
+    });
+    document.addEventListener('contextmenu', function(e) {
+        if (!e.target.closest('#akis-context-menu') && !e.target.closest('.akis-group-header')) {
+            document.getElementById('akis-context-menu').style.display = 'none';
+        }
+    });
     
     window.onload = function() {
         const savedMail = localStorage.getItem('s016_mail');
@@ -234,7 +260,6 @@
                 { facingMode: "environment" },
                 { 
                     fps: 20, 
-                    // Depo 1D barkodları için geniş ve basık bir okuma kutusu daha iyidir
                     qrbox: { width: 300, height: 100 },
                     experimentalFeatures: { useBarCodeDetectorIfSupported: true } 
                 },
@@ -375,6 +400,8 @@
                 groupOrder.unshift(groupKey);
             });
 
+            currentAkisData = groupedData;
+
             let fullHtml = "";
 
             groupOrder.forEach(gKey => {
@@ -424,7 +451,12 @@
 
                 fullHtml += `
                 <div style="margin-bottom:15px; border:1px solid var(--excell-green); border-radius:4px; overflow:hidden; background:#fff;">
-                    <div style="background:var(--excell-green); color:white; padding:8px 10px; font-weight:bold; font-size:12px; display:flex; justify-content:space-between;">
+                    <div class="akis-group-header" 
+                         oncontextmenu="handleContextMenu(event, '${gKey}')" 
+                         ontouchstart="startPress(event, '${gKey}')" 
+                         ontouchend="cancelPress()" 
+                         ontouchmove="cancelPress()"
+                         style="background:var(--excell-green); color:white; padding:8px 10px; font-weight:bold; font-size:12px; display:flex; justify-content:space-between; user-select:none; cursor:pointer;">
                         <span>🏢 ${yer}</span>
                         <span style="font-size:10px; font-weight:normal; opacity:0.8;">${saat}</span>
                     </div>
@@ -467,6 +499,90 @@
             });
         });
         updateSubeCounter();
+    }
+
+    function handleContextMenu(e, gKey) {
+        e.preventDefault();
+        showAkisMenu(e.pageX || (e.touches ? e.touches[0].pageX : 0), e.pageY || (e.touches ? e.touches[0].pageY : 0), gKey);
+    }
+
+    function startPress(e, gKey) {
+        pressTimer = setTimeout(() => {
+            showAkisMenu(e.touches[0].pageX, e.touches[0].pageY, gKey);
+        }, 500); 
+    }
+
+    function cancelPress() {
+        clearTimeout(pressTimer);
+    }
+
+    function showAkisMenu(x, y, gKey) {
+        selectedAkisGKey = gKey;
+        const menu = document.getElementById('akis-context-menu');
+        menu.style.display = 'flex';
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+        
+        const rect = menu.getBoundingClientRect();
+        if(rect.right > window.innerWidth) menu.style.left = (window.innerWidth - rect.width - 10) + 'px';
+        if(rect.bottom > window.innerHeight) menu.style.top = (window.innerHeight - rect.height - 10) + 'px';
+        
+        if ("vibrate" in navigator) navigator.vibrate(50);
+    }
+
+    async function sendAkisMail() {
+        document.getElementById('akis-context-menu').style.display = 'none';
+        if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
+
+        const groupData = currentAkisData[selectedAkisGKey];
+        const parts = selectedAkisGKey.split("|||");
+        const yer = parts[0];
+        
+        // Şube adının başındaki kodu (varsa) temizler
+        const cleanSube = yer.replace(/^[\w\d]+\s+/, '').trim();
+
+        let takilanlar = [];
+        let alinanlar = [];
+
+        groupData.forEach(item => {
+            if(item.d.tip === "ÇIKIŞ" || item.d.tip === "VER") {
+                takilanlar.push(item.d.barkod || item.d.urun);
+            }
+            if(item.d.tip === "GİRİŞ" || item.d.tip === "AL") {
+                alinanlar.push(item.d.barkod || item.d.urun);
+            }
+        });
+
+        const bodyText = `Sayın Yetkili,\n\nArızalı olan cihazın değişimi gerçekleştirilmiş olup, envanter bilgileri aşağıda yer almaktadır.\n\nTakılan: ${takilanlar.join(', ')}\nArızalı : ${alinanlar.join(', ')}\n\nBilgilerinize,\nİyi çalışmalar.`;
+
+        try {
+            await navigator.clipboard.writeText(bodyText);
+            alert("✅ İçerik panoya kopyalandı!\nE-posta uygulamanız açılıyor, metni mail içine yapıştırabilirsiniz.");
+        } catch (err) {
+            console.error("Panoya kopyalanamadı:", err);
+            alert("Metin panoya otomatik kopyalanamadı. Lütfen manuel olarak kopyalayın.\n\n" + bodyText);
+        }
+
+        const to = "btsahaoperasyonlariyonetimiyetkili@ziraatbank.com.tr";
+        const subject = "Envanter Transferi S016 Hk.";
+
+        // Outlook / Boxer (Exchange) sistemleri mailleri noktalı virgül (;) ile ayırır.
+        // mailto linki oluşturulurken cleanSube doğrudan eklenmiştir, böylece GAL (Global Address List) adresi kolayca çözer.
+        const mailtoLink = `mailto:${to}?cc=btizmirsahabakim@ziraatbank.com.tr;${encodeURIComponent(cleanSube)}&subject=${encodeURIComponent(subject)}`;
+        
+        window.location.href = mailtoLink;
+    }
+
+    function deleteAkisGroup() {
+        document.getElementById('akis-context-menu').style.display = 'none';
+        if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
+
+        if(confirm("Bu gruba ait tüm işlemleri kalıcı olarak silmek istediğinize emin misiniz?")) {
+            const groupData = currentAkisData[selectedAkisGKey];
+            groupData.forEach(item => {
+                db.ref('transferler/canli_akis/' + item.key).remove();
+            });
+        }
     }
 
     function addRowEx(type = "ÇIKIŞ") {
