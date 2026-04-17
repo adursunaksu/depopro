@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v73.7</title>
+    <title>S016 Depo Takip v73.8</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -31,7 +31,8 @@
         .user-cell { background: #fff; color: #333; padding: 3px 10px; border: 1px solid #999; font-weight: bold; display: flex; align-items: center; gap: 8px; }
         .logout-btn { color: #dc3545; cursor: pointer; font-size: 9px; border-left: 1px solid #ccc; padding-left: 8px; }
         
-        .content { flex: 1; overflow-y: auto; padding: 5px; padding-bottom: 85px; }
+        .content { flex: 1; overflow-y: auto; padding: 5px; }
+        .app-page { padding-bottom: 110px; } /* Alt menünün ekranı kapatmaması için genişletilmiş boşluk */
         
         .excel-table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
         .excel-table th, .excel-table td { border: 1px solid var(--border); padding: 8px 4px; text-align: left; overflow: hidden; }
@@ -125,7 +126,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016_DEPO_TAKIP_v73.7</div>
+    <div style="font-weight:bold;">S016_DEPO_TAKIP_v73.8</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -546,13 +547,11 @@
         const to = "btsahaoperasyonlariyonetimiyetkili@ziraatbank.com.tr";
         const subject = "Envanter Transferi S016 Hk.";
         
-        // CC KISMININ KESİN ÇÖZÜMÜ: YALNIZCA SABİT MAİL VE (VARSA) PERSONEL İSMİ
         let ccText = "btizmirsahabakim@ziraatbank.com.tr";
         if (persIsmi !== "") {
             ccText += ";" + persIsmi;
         }
 
-        // href bağlantısını kuruyoruz. Şube ismi tamamen dışarıda bırakıldı.
         const mailtoLink = "mailto:" + to + "?cc=" + encodeURIComponent(ccText) + "&subject=" + encodeURIComponent(subject);
         
         window.location.href = mailtoLink;
