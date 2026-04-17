@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v73.8</title>
+    <title>S016 Depo Takip v73.9</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -32,7 +32,7 @@
         .logout-btn { color: #dc3545; cursor: pointer; font-size: 9px; border-left: 1px solid #ccc; padding-left: 8px; }
         
         .content { flex: 1; overflow-y: auto; padding: 5px; }
-        .app-page { padding-bottom: 110px; } /* Alt menünün ekranı kapatmaması için genişletilmiş boşluk */
+        .app-page { padding-bottom: 110px; } 
         
         .excel-table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
         .excel-table th, .excel-table td { border: 1px solid var(--border); padding: 8px 4px; text-align: left; overflow: hidden; }
@@ -50,7 +50,7 @@
         .bg-done { background: #28a745; }
 
         .excel-row-container { display: flex; border: 1px solid #ccc; background: #fff; margin-bottom: 3px; min-height: 44px; align-items: center; border-radius: 4px; overflow: hidden; }
-        .type-select { width: 60px; height: 44px; border: none; border-right: 1px solid #ccc; font-weight: bold; text-align: center; outline: none; }
+        .type-select { width: 75px; height: 44px; border: none; border-right: 1px solid #ccc; font-weight: bold; text-align: center; outline: none; }
         .urun-select { flex: 2; height: 44px; border: none; padding-left: 5px; font-weight: bold; outline: none; background: transparent; }
         .scan-container { position: relative; display: flex; align-items: center; flex: 2; height: 44px; }
         .barkod-input { width: 100%; height: 100%; border: none; border-right: 1px solid #ccc; padding: 0 30px 0 10px; font-size: 13px; outline: none; }
@@ -126,7 +126,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016_DEPO_TAKIP_v73.8</div>
+    <div style="font-weight:bold;">S016_DEPO_TAKIP_v73.9</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -573,10 +573,11 @@
         const rowId = 'brk-' + Math.random().toString(36).substr(2, 9);
         const div = document.createElement('div'); 
         div.className = "excel-row-container";
+        // Görünen kelimeleri "Takılan" ve "Arızalı" yaptık, ancak value kısımları ÇIKIŞ ve GİRİŞ olarak kaldı.
         div.innerHTML = `
             <select class="type-select ${type==='ÇIKIŞ'?'bg-out':'bg-in'}" onchange="this.classList.toggle('bg-out', this.value==='ÇIKIŞ'); this.classList.toggle('bg-in', this.value==='GİRİŞ')">
-                <option value="ÇIKIŞ" ${type==='ÇIKIŞ'?'selected':''}>VER</option>
-                <option value="GİRİŞ" ${type==='GİRİŞ'?'selected':''}>AL</option>
+                <option value="ÇIKIŞ" ${type==='ÇIKIŞ'?'selected':''}>Takılan</option>
+                <option value="GİRİŞ" ${type==='GİRİŞ'?'selected':''}>Arızalı</option>
             </select>
             <div class="scan-container">
                 <input type="number" id="${rowId}" placeholder="Barkod..." class="barkod-input">
