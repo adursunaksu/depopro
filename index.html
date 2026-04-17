@@ -538,8 +538,7 @@
         const parts = selectedAkisGKey.split("|||");
         const yer = parts[0];
         
-        // Şube adının başındaki kodu (varsa) temizler
-        const cleanSube = yer.replace(/^[\w\d]+\s+/, '').trim();
+        const cleanSube = yer.replace(/^[\w\d]+\s+/, '');
 
         let takilanlar = [];
         let alinanlar = [];
@@ -553,6 +552,7 @@
             }
         });
 
+        // "Alınan" ibaresi "Arızalı" olarak güncellendi.
         const bodyText = `Sayın Yetkili,\n\nArızalı olan cihazın değişimi gerçekleştirilmiş olup, envanter bilgileri aşağıda yer almaktadır.\n\nTakılan: ${takilanlar.join(', ')}\nArızalı : ${alinanlar.join(', ')}\n\nBilgilerinize,\nİyi çalışmalar.`;
 
         try {
@@ -564,12 +564,12 @@
         }
 
         const to = "btsahaoperasyonlariyonetimiyetkili@ziraatbank.com.tr";
+        // CC'ye temizlenmiş şube ismi eklendi
+        const cc = `btizmirsahabakim@ziraatbank.com.tr,${cleanSube}`;
+        // Konu "Envanter Transferi S016 Hk." olarak sabitlendi
         const subject = "Envanter Transferi S016 Hk.";
 
-        // Outlook / Boxer (Exchange) sistemleri mailleri noktalı virgül (;) ile ayırır.
-        // mailto linki oluşturulurken cleanSube doğrudan eklenmiştir, böylece GAL (Global Address List) adresi kolayca çözer.
-        const mailtoLink = `mailto:${to}?cc=btizmirsahabakim@ziraatbank.com.tr;${encodeURIComponent(cleanSube)}&subject=${encodeURIComponent(subject)}`;
-        
+        const mailtoLink = `mailto:${to}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}`;
         window.location.href = mailtoLink;
     }
 
