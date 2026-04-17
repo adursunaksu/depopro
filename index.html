@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v72.9</title>
+    <title>S016 Depo Takip v73.4</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -61,7 +61,6 @@
         #camera-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:3500; padding:10px; flex-direction:column; justify-content:center; }
         #reader { width:100%; max-width:400px; margin:auto; background:white; border-radius:8px; overflow:hidden; }
         #camera-close-btn { width:40px; height:40px; background:white; border-radius:50%; color:red; font-size:24px; font-weight:bold; border:none; position:absolute; top:20px; right:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px rgba(0,0,0,0.3); }
-        #flash-btn { width:40px; height:40px; background:white; border-radius:50%; color:#333; font-size:20px; border:none; position:absolute; top:20px; left:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px rgba(0,0,0,0.3); }
 
         .excel-actions { display: flex; gap: 5px; margin-top: 8px; }
         .btn-excel-add { flex: 1; padding: 12px; border: 1px solid #ccc; font-weight: bold; background: white; border-radius: 4px; cursor: pointer; }
@@ -74,11 +73,13 @@
         #login-screen { position: fixed; inset: 0; background: var(--excell-green); z-index: 4000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
         .rem-box { margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
 
-        /* Bağlam (Context) Menüsü Stilleri */
         #akis-context-menu { position: fixed; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 5000; display: none; flex-direction: column; min-width: 180px; overflow: hidden; }
         .context-menu-item { padding: 12px 15px; font-size: 13px; font-weight: bold; color: #333; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #eee; }
         .context-menu-item:active { background: #e8f5e9; }
         .context-menu-item:last-child { border-bottom: none; color: #dc3545; }
+
+        .btn-circle { width: 30px; height: 30px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.5); background: transparent; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; cursor: pointer; padding-bottom: 4px; }
+        .btn-circle:active { background: rgba(255,255,255,0.3); }
     </style>
 </head>
 <body>
@@ -95,7 +96,7 @@
 
 <div id="akis-context-menu">
     <div class="context-menu-item" onclick="sendAkisMail()">📧 E-Posta Gönder (Panoya Kopyala)</div>
-    <div class="context-menu-item" onclick="deleteAkisGroup()">🗑️ Grubu Firebase'den Sil</div>
+    <div class="context-menu-item" onclick="deleteAkisGroup()">🗑️ Grubu Sil</div>
 </div>
 
 <div id="transfer-modal">
@@ -119,21 +120,21 @@
 </div>
 
 <div id="camera-modal">
-    <button id="flash-btn" onclick="toggleFlash()">🔦</button>
     <button id="camera-close-btn" onclick="stopScannerEx()">×</button>
     <div id="reader"></div>
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016_DEPO_TAKIP_v72.9</div>
+    <div style="font-weight:bold;">S016_DEPO_TAKIP_v73.4</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
 <div class="content">
     <div id="p-islem" class="app-page">
         <div style="background:#fff; padding:10px; border:1px solid #ccc; margin-bottom:5px; border-radius:4px;">
-            <input type="text" id="target-sube" placeholder="Hedef Lokasyon Seçin" readonly onclick="openModal()" style="width:100%; margin-bottom:10px; padding:12px; background:#fffde7; border:1px solid #ccc; font-weight:bold; border-radius:4px; color: #000;">
-            <label style="display:flex; align-items:center; gap:10px; color:var(--excell-green); font-weight:bold;">
+            <input type="text" id="target-sube" placeholder="📍 Hedef Lokasyon Seçin" readonly onclick="openModal()" style="width:100%; margin-bottom:8px; padding:12px; background:#fffde7; border:1px solid #ccc; font-weight:bold; border-radius:4px; color: #000; outline:none;">
+            <input type="text" id="personel-name" placeholder="👤 Personel İsmi (ZORUNLU)" style="width:100%; margin-bottom:10px; padding:12px; border:2px solid #ff9800; background:#fff8e1; font-weight:bold; border-radius:4px; outline:none; color:#333;">
+            <label style="display:flex; align-items:center; gap:10px; color:var(--excell-green); font-weight:bold; padding-top: 5px; border-top: 1px solid #eee;">
                 <input type="checkbox" id="to-my-truck" onchange="toggleTruckMode()"> 🚛 ARACIMA TRANSFER ET
             </label>
         </div>
@@ -146,7 +147,7 @@
 
     <div id="p-akis" class="app-page" style="display:none;">
         <div style="padding:10px; background:#fff; border-bottom:1px solid #ccc; margin-bottom:5px; position:sticky; top:0; z-index:10;">
-            <input type="text" id="akis-ara" placeholder="Lokasyon, Ürün, Barkod veya Asistan Ara..." oninput="filterAkis()" style="width:100%; padding:12px; border:2px solid var(--excell-green); border-radius:4px; font-size:13px; outline:none; font-weight:bold;">
+            <input type="text" id="akis-ara" placeholder="Lokasyon, Ürün, Barkod veya Personel Ara..." oninput="filterAkis()" style="width:100%; padding:12px; border:2px solid var(--excell-green); border-radius:4px; font-size:13px; outline:none; font-weight:bold;">
         </div>
         <div id="akis-container"></div>
     </div>
@@ -178,11 +179,9 @@
     let uName = ""; let uFullKey = ""; let uMail = "";
     let selectedItemForTransfer = null;
     let html5QrcodeScannerEx = null;
-    let flashOn = false;
 
     let currentAkisData = {};
     let selectedAkisGKey = "";
-    let pressTimer;
 
     const aracMap = {
         "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
@@ -227,17 +226,6 @@
         "2697 Atatürk Hastanesi-İzmir Şubesi"
     ];
     let dynamicSubeler = [];
-
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('#akis-context-menu')) {
-            document.getElementById('akis-context-menu').style.display = 'none';
-        }
-    });
-    document.addEventListener('contextmenu', function(e) {
-        if (!e.target.closest('#akis-context-menu') && !e.target.closest('.akis-group-header')) {
-            document.getElementById('akis-context-menu').style.display = 'none';
-        }
-    });
     
     window.onload = function() {
         const savedMail = localStorage.getItem('s016_mail');
@@ -254,7 +242,6 @@
         
         try {
             html5QrcodeScannerEx = new Html5Qrcode("reader");
-            flashOn = false;
 
             html5QrcodeScannerEx.start(
                 { facingMode: "environment" },
@@ -284,14 +271,6 @@
             alert("Barkod okuyucu yüklenirken bir hata oluştu.");
             stopScannerEx();
         }
-    }
-
-    function toggleFlash() {
-        if (!html5QrcodeScannerEx) return;
-        flashOn = !flashOn;
-        html5QrcodeScannerEx.applyVideoConstraints({
-            advanced: [{ torch: flashOn }]
-        }).catch(() => alert("Fener desteklenmiyor."));
     }
 
     function stopScannerEx() {
@@ -385,7 +364,9 @@
                 const d = i.val();
                 const key = i.key;
                 
-                const groupKey = d.yer + "|||" + (d.saat || "Belirtilmemiş");
+                const tarih = d.tarih || "";
+                const saat = d.saat || "";
+                const groupKey = d.yer + "|||" + tarih + "|||" + saat;
                 
                 if(!groupedData[groupKey]) {
                     groupedData[groupKey] = [];
@@ -407,7 +388,10 @@
             groupOrder.forEach(gKey => {
                 const parts = gKey.split("|||");
                 const yer = parts[0];
-                const saat = parts[1];
+                const tarih = parts[1];
+                const saat = parts[2];
+
+                const gonderenIsmi = groupedData[gKey][0].d.gonderen || "Bilinmiyor";
 
                 let rowsHtml = "";
                 groupedData[gKey].forEach(item => {
@@ -443,7 +427,7 @@
                     rowsHtml += `
                     <tr class="${isD?'row-done':(isOnay?'row-onay':'row-waiting')}">
                         <td style="width:30%;"><b>${d.urun}</b><br><small style="color:#555;">${d.barkod}${checkMark}</small></td>
-                        <td style="width:20%;">${d.gonderen}</td>
+                        <td style="width:20%; font-weight:bold;">${d.personel || '-'}</td>
                         <td style="width:25%;">${kpCell}</td>
                         <td style="width:25%;">${actionHtml}</td>
                     </tr>`;
@@ -451,20 +435,24 @@
 
                 fullHtml += `
                 <div style="margin-bottom:15px; border:1px solid var(--excell-green); border-radius:4px; overflow:hidden; background:#fff;">
-                    <div class="akis-group-header" 
-                         oncontextmenu="handleContextMenu(event, '${gKey}')" 
-                         ontouchstart="startPress(event, '${gKey}')" 
-                         ontouchend="cancelPress()" 
-                         ontouchmove="cancelPress()"
-                         style="background:var(--excell-green); color:white; padding:8px 10px; font-weight:bold; font-size:12px; display:flex; justify-content:space-between; user-select:none; cursor:pointer;">
-                        <span>🏢 ${yer}</span>
-                        <span style="font-size:10px; font-weight:normal; opacity:0.8;">${saat}</span>
+                    <div class="akis-group-header" style="background:var(--excell-green); color:white; padding:8px 10px; font-weight:bold; font-size:12px; display:flex; justify-content:space-between; align-items:center; user-select:none;">
+                        <div style="display:flex; flex-direction:column; gap:3px; flex:1;">
+                            <span>🏢 ${yer}</span>
+                            <span style="font-size:10px; font-weight:normal; opacity:0.9;">📅 ${tarih} - ⏰ ${saat}</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                                <span style="font-size:8px; opacity:0.8; font-weight:normal; letter-spacing:0.5px;">TEKNİSYEN</span>
+                                <span style="font-size:11px;">${gonderenIsmi}</span>
+                            </div>
+                            <button class="btn-circle" onclick="openAkisMenu(event, '${gKey}')">⋮</button>
+                        </div>
                     </div>
                     <table class="excel-table" style="border:none;">
                         <thead>
                             <tr>
                                 <th style="width:30%;">Ürün-Barkod</th>
-                                <th style="width:20%;">Asistan</th>
+                                <th style="width:20%;">Personel</th>
                                 <th style="width:25%;">KP NO</th>
                                 <th style="width:25%;">Transfer</th>
                             </tr>
@@ -501,33 +489,28 @@
         updateSubeCounter();
     }
 
-    function handleContextMenu(e, gKey) {
-        e.preventDefault();
-        showAkisMenu(e.pageX || (e.touches ? e.touches[0].pageX : 0), e.pageY || (e.touches ? e.touches[0].pageY : 0), gKey);
-    }
-
-    function startPress(e, gKey) {
-        pressTimer = setTimeout(() => {
-            showAkisMenu(e.touches[0].pageX, e.touches[0].pageY, gKey);
-        }, 500); 
-    }
-
-    function cancelPress() {
-        clearTimeout(pressTimer);
-    }
-
-    function showAkisMenu(x, y, gKey) {
+    function openAkisMenu(e, gKey) {
+        e.stopPropagation();
         selectedAkisGKey = gKey;
         const menu = document.getElementById('akis-context-menu');
         menu.style.display = 'flex';
+        
+        const x = e.pageX - 160; 
+        const y = e.pageY + 10;
+        
         menu.style.left = x + 'px';
         menu.style.top = y + 'px';
         
-        const rect = menu.getBoundingClientRect();
-        if(rect.right > window.innerWidth) menu.style.left = (window.innerWidth - rect.width - 10) + 'px';
-        if(rect.bottom > window.innerHeight) menu.style.top = (window.innerHeight - rect.height - 10) + 'px';
-        
         if ("vibrate" in navigator) navigator.vibrate(50);
+
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu(ev) {
+                if (!ev.target.closest('#akis-context-menu')) {
+                    menu.style.display = 'none';
+                    document.removeEventListener('click', closeMenu);
+                }
+            });
+        }, 10);
     }
 
     async function sendAkisMail() {
@@ -538,11 +521,12 @@
         const parts = selectedAkisGKey.split("|||");
         const yer = parts[0];
         
-        // Şube adının başındaki kodu (varsa) temizler
         const cleanSube = yer.replace(/^[\w\d]+\s+/, '').trim();
 
         let takilanlar = [];
         let alinanlar = [];
+        let persIsmi = groupData[0].d.personel || "";
+        if (persIsmi === "-") persIsmi = "";
 
         groupData.forEach(item => {
             if(item.d.tip === "ÇIKIŞ" || item.d.tip === "VER") {
@@ -553,6 +537,7 @@
             }
         });
 
+        // Personel ismini pano (kopyalanan metin) içerisinden tamamen çıkardık.
         const bodyText = `Sayın Yetkili,\n\nArızalı olan cihazın değişimi gerçekleştirilmiş olup, envanter bilgileri aşağıda yer almaktadır.\n\nTakılan: ${takilanlar.join(', ')}\nArızalı : ${alinanlar.join(', ')}\n\nBilgilerinize,\nİyi çalışmalar.`;
 
         try {
@@ -565,10 +550,15 @@
 
         const to = "btsahaoperasyonlariyonetimiyetkili@ziraatbank.com.tr";
         const subject = "Envanter Transferi S016 Hk.";
+        
+        // CC listesini oluşturuyoruz: Temel mail adresi + (varsa) Personel İsmi + Şube İsmi
+        let ccList = "btizmirsahabakim@ziraatbank.com.tr";
+        if (persIsmi) {
+            ccList += ";" + encodeURIComponent(persIsmi);
+        }
+        ccList += ";" + encodeURIComponent(cleanSube);
 
-        // Outlook / Boxer (Exchange) sistemleri mailleri noktalı virgül (;) ile ayırır.
-        // mailto linki oluşturulurken cleanSube doğrudan eklenmiştir, böylece GAL (Global Address List) adresi kolayca çözer.
-        const mailtoLink = `mailto:${to}?cc=btizmirsahabakim@ziraatbank.com.tr;${encodeURIComponent(cleanSube)}&subject=${encodeURIComponent(subject)}`;
+        const mailtoLink = `mailto:${to}?cc=${ccList}&subject=${encodeURIComponent(subject)}`;
         
         window.location.href = mailtoLink;
     }
@@ -630,7 +620,24 @@
         const isInterCar = Object.values(aracMap).some(a => a.kod === target);
         const status = isInterCar ? "ONAY BEKLIYOR" : "BEKLEMEDE";
         const kpFormatted = formatKP(target);
-        const data = { gonderen: uName, yer: target, tip: "ÇIKIŞ", barkod: selectedItemForTransfer.barkod, urun: selectedItemForTransfer.urun, status: status, kp: kpFormatted, saat: new Date().toLocaleTimeString('tr-TR'), gonderen_kod: uFullKey };
+        
+        const now = new Date();
+        const tarih = now.toLocaleDateString('tr-TR');
+        const saat = now.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
+
+        const data = { 
+            gonderen: uName, 
+            yer: target, 
+            personel: "-", 
+            tip: "ÇIKIŞ", 
+            barkod: selectedItemForTransfer.barkod, 
+            urun: selectedItemForTransfer.urun, 
+            status: status, 
+            kp: kpFormatted, 
+            tarih: tarih, 
+            saat: saat, 
+            gonderen_kod: uFullKey 
+        };
         db.ref('transferler/canli_akis').push(data);
         alert("İşlem akışa kaydedildi.");
         closeTransferModal();
@@ -661,8 +668,12 @@
 
     async function saveAllEx() {
         const target = document.getElementById('target-sube').value;
+        const pers = document.getElementById('personel-name').value.trim();
         const toMyTruck = document.getElementById('to-my-truck').checked;
+        
         if(!toMyTruck && (!target || target === "Hedef Lokasyon Seçin")) return alert("Lütfen bir lokasyon seçin!");
+        
+        if(!toMyTruck && !pers) return alert("Lütfen Personel İsmi giriniz!");
 
         let currentDepoBarkodlar = [];
         if (toMyTruck) {
@@ -672,6 +683,10 @@
 
         let addedCount = 0;
         const kpFormatted = formatKP(target);
+        
+        const now = new Date();
+        const tarih = now.toLocaleDateString('tr-TR');
+        const saat = now.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
 
         const rowElements = Array.from(document.querySelectorAll('.excel-row-container')).reverse();
 
@@ -687,7 +702,19 @@
                     }
                 } else {
                     const kpVal = (type === "ÇIKIŞ") ? kpFormatted : "";
-                    const data = { gonderen: uName, yer: target, tip: type, barkod: b, urun: u, status: "BEKLEMEDE", kp: kpVal, saat: new Date().toLocaleTimeString('tr-TR'), gonderen_kod: uFullKey };
+                    const data = { 
+                        gonderen: uName, 
+                        yer: target, 
+                        personel: pers,
+                        tip: type, 
+                        barkod: b, 
+                        urun: u, 
+                        status: "BEKLEMEDE", 
+                        kp: kpVal, 
+                        tarih: tarih,
+                        saat: saat, 
+                        gonderen_kod: uFullKey 
+                    };
                     db.ref('transferler/canli_akis').push(data);
                     addedCount++;
                 }
@@ -696,6 +723,7 @@
 
         if (addedCount > 0) { 
             document.getElementById('items-container').innerHTML = ""; 
+            document.getElementById('personel-name').value = "";
             addRowEx("ÇIKIŞ"); 
             addRowEx("GİRİŞ"); 
         }
@@ -712,8 +740,14 @@
         });
     }
 
-    function toggleTruckMode() { const isT = document.getElementById('to-my-truck').checked; document.getElementById('target-sube').value = isT ? uFullKey : ""; document.getElementById('target-sube').style.opacity = isT ? "0.6" : "1"; }
-    function updateSubeCounter() { const total = staticSubeler.length + dynamicSubeler.length; document.getElementById('target-sube').placeholder = `Hedef Lokasyon Seçin (${total})`; }
+    function toggleTruckMode() { 
+        const isT = document.getElementById('to-my-truck').checked; 
+        document.getElementById('target-sube').value = isT ? uFullKey : ""; 
+        document.getElementById('target-sube').style.opacity = isT ? "0.6" : "1"; 
+        document.getElementById('personel-name').style.display = isT ? "none" : "block";
+    }
+    
+    function updateSubeCounter() { const total = staticSubeler.length + dynamicSubeler.length; document.getElementById('target-sube').placeholder = `📍 Hedef Lokasyon Seçin (${total})`; }
     function tabEx(id, el) { document.querySelectorAll('.app-page').forEach(p => p.style.display = 'none'); document.getElementById('p-'+id).style.display = 'block'; document.querySelectorAll('.excel-nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
 
     function filterAkis() {
