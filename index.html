@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v73.2</title>
+    <title>S016 Depo Takip v73.3</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -15,7 +15,6 @@
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; font-size: 11px; }
         body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Modallar */
         #transfer-modal, #sube-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2000; padding:20px; }
         .modal-box { background:white; border-radius:8px; height:85vh; display:flex; flex-direction:column; overflow:hidden; border: 1px solid #666; }
         .modal-search { padding:10px; border-bottom:1px solid #eee; }
@@ -23,43 +22,31 @@
         .modal-list { flex:1; overflow-y:auto; }
         .sube-item { padding:15px; border-bottom:1px solid #f0f0f0; font-size:13px; color: #333; cursor: pointer; }
         .sube-item:active { background: #e8f5e9; }
-        .add-btn-list { padding: 15px; background: #e8f5e9; color: var(--excell-green); text-align: center; font-weight: bold; cursor: pointer; border-top: 1px solid #ddd; }
         
-        /* Header & Bar */
         .excel-bar { background: var(--excell-green); color: white; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
         .user-cell { background: #fff; color: #333; padding: 3px 10px; border: 1px solid #999; font-weight: bold; display: flex; align-items: center; gap: 8px; }
         .logout-btn { color: #dc3545; cursor: pointer; font-size: 9px; border-left: 1px solid #ccc; padding-left: 8px; }
         
-        /* İçerik Alanı */
         .content { flex: 1; overflow-y: auto; padding: 5px; padding-bottom: 85px; }
         .excel-table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
-        .excel-table th, .excel-table td { border: 1px solid var(--border); padding: 8px 4px; text-align: left; overflow: hidden; }
-        .excel-table th { background: #ebf1de; font-size: 10px; font-weight: bold; color: #444; }
+        .excel-table th, .excel-table td { border: 1px solid var(--border); padding: 8px 4px; text-align: left; }
+        .excel-table th { background: #ebf1de; font-weight: bold; color: #444; }
         
-        /* Satır Renkleri */
         .row-waiting { background-color: #f8d7da !important; }
         .row-onay { background-color: #fff3cd !important; }
-        .row-done { background-color: #d4edda !important; color: #444; }
-        .btn-status { width: 100%; padding: 8px 2px; border: none; border-radius: 3px; font-weight: bold; color: white; font-size: 10px; }
-        .bg-waiting { background: #dc3545; }
-        .bg-onay { background: #ff9800; }
-        .bg-done { background: #28a745; }
+        .row-done { background-color: #d4edda !important; }
 
-        /* Form Elemanları */
         .excel-row-container { display: flex; border: 1px solid #ccc; background: #fff; margin-bottom: 3px; min-height: 44px; align-items: center; border-radius: 4px; overflow: hidden; }
-        .type-select { width: 60px; height: 44px; border: none; border-right: 1px solid #ccc; font-weight: bold; text-align: center; outline: none; }
-        .urun-select { flex: 2; height: 44px; border: none; padding-left: 5px; font-weight: bold; outline: none; background: transparent; }
+        .type-select { width: 60px; height: 44px; border: none; border-right: 1px solid #ccc; font-weight: bold; text-align: center; }
+        .urun-select { flex: 2; height: 44px; border: none; padding-left: 5px; font-weight: bold; }
         .scan-container { position: relative; display: flex; align-items: center; flex: 2; height: 44px; }
-        .barkod-input { width: 100%; height: 100%; border: none; border-right: 1px solid #ccc; padding: 0 30px 0 10px; font-size: 13px; outline: none; }
-        .magnifier-btn { position: absolute; right: 5px; cursor: pointer; font-size: 18px; color: var(--excell-green); user-select: none; }
-        .kp-input-large { width: 100%; border: 1px solid #ddd; padding: 4px 25px 4px 4px; border-radius: 2px; height: 26px; font-size: 10px; }
+        .barkod-input { width: 100%; height: 100%; border: none; border-right: 1px solid #ccc; padding-left: 10px; font-size: 13px; }
+        .magnifier-btn { position: absolute; right: 5px; cursor: pointer; font-size: 18px; color: var(--excell-green); }
         
-        /* Alt Navigasyon */
         .excel-nav { height: 65px; background: #fff; display: flex; position: fixed; bottom: 0; width: 100%; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); padding: 8px 10px; gap: 8px; z-index: 2500; }
-        .excel-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; transition: all 0.2s ease; font-size: 12px; }
-        .excel-nav-item.active { background: #e8f5e9; color: var(--excell-green); font-weight: bold; border: 2px solid var(--excell-green); box-shadow: 0 3px 8px rgba(33,115,70,0.3); }
+        .excel-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; font-size: 12px; }
+        .excel-nav-item.active { background: #e8f5e9; color: var(--excell-green); font-weight: bold; border: 2px solid var(--excell-green); }
 
-        /* Login */
         #login-screen { position: fixed; inset: 0; background: var(--excell-green); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
     </style>
 </head>
@@ -67,37 +54,34 @@
 
 <div id="login-screen">
     <h2 style="letter-spacing: 2px;">S016 DEPO TAKİP</h2>
-    <input type="email" id="email" placeholder="E-posta" style="width:80%; margin-bottom:10px; padding:12px; border-radius:4px;">
-    <input type="password" id="pass" placeholder="Şifre" style="width:80%; margin-bottom:10px; padding:12px; border-radius:4px;">
+    <input type="email" id="email" placeholder="E-posta" style="width:80%; margin-bottom:10px; padding:12px; border-radius:4px; border:none;">
+    <input type="password" id="pass" placeholder="Şifre" style="width:80%; margin-bottom:10px; padding:12px; border-radius:4px; border:none;">
     <label style="margin-bottom:15px; display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" id="rem-check"> Beni Hatırla
+        <input type="checkbox" id="rem-check" checked> Beni Hatırla
     </label>
     <button onclick="login()" style="width:80%; padding:15px; font-weight:bold; background:white; color:var(--excell-green); border:none; border-radius:4px;">GİRİŞ YAP</button>
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016 v73.2</div>
+    <div style="font-weight:bold;">S016 v73.3</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
 <div class="content">
     <div id="p-islem" class="app-page">
         <div style="background:#fff; padding:10px; border:1px solid #ccc; margin-bottom:5px; border-radius:4px;">
-            <input type="text" id="target-sube" placeholder="Hedef Lokasyon Seçin" readonly onclick="openModal()" style="width:100%; margin-bottom:10px; padding:12px; background:#fffde7; border:1px solid #ccc; font-weight:bold; color:#000;">
-            <label><input type="checkbox" id="to-my-truck" onchange="toggleTruckMode()"> 🚛 ARACIMA TRANSFER ET</label>
+            <input type="text" id="target-sube" placeholder="Hedef Lokasyon Seçin" readonly onclick="openModal()" style="width:100%; padding:12px; background:#fffde7; border:1px solid #ccc; font-weight:bold; color:#000;">
+            <label style="display:block; margin-top:10px;"><input type="checkbox" id="to-my-truck" onchange="toggleTruckMode()"> 🚛 ARACIMA TRANSFER ET</label>
         </div>
         <div id="items-container"></div>
-        <div class="excel-actions" style="display:flex; gap:5px; margin-top:10px;">
-            <button onclick="addRowEx()" style="flex:1; padding:12px;">➕ Satır Ekle</button>
+        <div style="display:flex; gap:5px; margin-top:10px;">
+            <button onclick="addRowEx()" style="flex:1; padding:12px; font-weight:bold;">➕ Satır Ekle</button>
             <button onclick="saveAllEx()" style="flex:1; padding:12px; background:var(--excell-green); color:white; border:none; font-weight:bold;">💾 KAYDET</button>
         </div>
     </div>
-
     <div id="p-akis" class="app-page" style="display:none;">
-        <input type="text" id="akis-ara" placeholder="Ara..." oninput="filterAkis()" style="width:100%; padding:10px; margin-bottom:5px;">
         <div id="akis-container"></div>
     </div>
-
     <div id="p-depo" class="app-page" style="display:none;">
         <div id="depoExList"></div>
     </div>
@@ -107,15 +91,7 @@
     <div class="modal-box">
         <div class="modal-search"><input type="text" id="sube-ara" placeholder="Şube ara..." oninput="filterSubeler()"></div>
         <div class="modal-list" id="modal-list-body"></div>
-        <button onclick="closeModal()" style="padding:15px; background:#444; color:white;">KAPAT</button>
-    </div>
-</div>
-
-<div id="transfer-modal">
-    <div class="modal-box">
-        <div class="modal-search"><input type="text" id="transfer-ara" placeholder="Hedef Ara..." oninput="filterTransferList()"></div>
-        <div class="modal-list" id="transfer-list-body"></div>
-        <button onclick="closeTransferModal()" style="padding:15px; background:#444; color:white;">İPTAL</button>
+        <button onclick="closeModal()" style="padding:15px; background:#444; color:white; border:none;">KAPAT</button>
     </div>
 </div>
 
@@ -126,7 +102,6 @@
 </div>
 
 <script>
-    // Firebase ve Temel Ayarlar
     const firebaseConfig = {
         apiKey: "AIzaSyAJcpDXuUiW2b-YHKNsIELtRi0AR96WPeY",
         authDomain: "depotakippro.firebaseapp.com",
@@ -140,28 +115,22 @@
     const db = firebase.database();
     
     let uName = ""; let uFullKey = ""; let uMail = "";
+    const staticSubeler = ["S016 İzmir Saha Depo", "68 Bergama-İzmir Şubesi", "137 İzmir Şubesi", "138 Urla-İzmir Şubesi", "590 Alaçatı Çeşme-İzmir Şubesi"];
     const aracMap = {
         "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
-        "dokocadag@ziraatbank.com.tr": { ad: "DOĞAÇ", kod: "s573 Doğaç" },
-        "taylansahin@ziraatbank.com.tr": { ad: "TAYLAN", kod: "s574 Taylan" },
-        "adincel@ziraatbank.com.tr": { ad: "ALİ RIZA", kod: "s569 Ali Rıza" },
-        "ahaksu@ziraatbank.com.tr": { ad: "HALUK", kod: "s528 Haluk" }
+        "dokocadag@ziraatbank.com.tr": { ad: "DOĞAÇ", kod: "s573 Doğaç" }
     };
 
-    const staticSubeler = ["S016 İzmir Saha Depo", "68 Bergama-İzmir", "137 İzmir Merkez", "138 Urla-İzmir", "317 Torbalı-İzmir", "1750 İzmir PGM"]; 
-    let dynamicSubeler = [];
-
-    // --- KRİTİK BÖLÜM: BARKOD VE GİRİŞ KONTROLÜ ---
+    // --- BARKOD YAKALAMA VE OTOMATİK GİRİŞ SİGORTASI ---
     window.onload = function() {
-        const savedMail = localStorage.getItem('s016_mail');
-        const savedPass = localStorage.getItem('s016_pass');
-        const barcode = new URLSearchParams(window.location.search).get('barcode');
-
-        if(savedMail && savedPass) {
-            document.getElementById('email').value = savedMail;
-            document.getElementById('pass').value = savedPass;
-            document.getElementById('rem-check').checked = true;
-            login(true); // Sessiz giriş
+        const mail = localStorage.getItem('s016_mail');
+        const pass = localStorage.getItem('s016_pass');
+        const params = new URLSearchParams(window.location.search);
+        
+        if (mail && pass) {
+            document.getElementById('email').value = mail;
+            document.getElementById('pass').value = pass;
+            login(true); // Sessizce gir
         }
     };
 
@@ -169,69 +138,68 @@
         const e = document.getElementById('email').value.trim().toLowerCase();
         const p = document.getElementById('pass').value;
         firebase.auth().signInWithEmailAndPassword(e, p).then(u => {
-            if(document.getElementById('rem-check').checked) {
-                localStorage.setItem('s016_mail', e); localStorage.setItem('s016_pass', p);
-            }
-            uMail = e; uName = (aracMap[e] || {ad: e.split('@')[0]}).ad; uFullKey = (aracMap[e] || {kod: e.split('@')[0]}).kod;
+            localStorage.setItem('s016_mail', e); localStorage.setItem('s016_pass', p);
+            uMail = e; uName = (aracMap[e] || {ad: e.split('@')[0].toUpperCase()}).ad;
+            uFullKey = (aracMap[e] || {kod: e.split('@')[0]}).kod;
             document.getElementById('userTag').innerHTML = `${uName} <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>`;
             document.getElementById('login-screen').style.display = 'none';
-            initApp();
-            checkUrlForBarcode();
-        }).catch(err => { if(!isAuto) alert("Hata: " + err.message); });
+            init();
+            // Giriş biter bitmez URL'de barkod var mı bak
+            const barcode = new URLSearchParams(window.location.search).get('barcode');
+            if(barcode) processBarcode(barcode, new URLSearchParams(window.location.search).get('target'));
+        }).catch(() => { if(!isAuto) alert("Giriş Hatalı!"); });
     }
 
-    function checkUrlForBarcode() {
-        const params = new URLSearchParams(window.location.search);
-        const barcode = params.get('barcode');
-        const target = params.get('target');
-
-        if(barcode) {
-            setTimeout(() => {
-                if(target && target.startsWith('kp-')) {
-                    const key = target.replace('kp-', '');
-                    db.ref('transferler/canli_akis/' + key).update({kp: barcode});
-                    tabEx('akis', document.querySelectorAll('.excel-nav-item')[1]);
-                } else {
-                    addRowEx("ÇIKIŞ");
-                    const inputs = document.querySelectorAll('.barkod-input');
-                    inputs[inputs.length-1].value = barcode;
-                }
-                // URL temizle
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }, 1000);
+    function processBarcode(code, target) {
+        if(target && target.startsWith('kp-')) {
+            db.ref('transferler/canli_akis/' + target.replace('kp-', '')).update({kp: code});
+            tabEx('akis', document.querySelectorAll('.excel-nav-item')[1]);
+        } else {
+            const inputs = document.querySelectorAll('.barkod-input');
+            let found = false;
+            for(let i=0; i<inputs.length; i++) {
+                if(inputs[i].value === "") { inputs[i].value = code; found = true; break; }
+            }
+            if(!found) { addRowEx(); setTimeout(() => {
+                const ni = document.querySelectorAll('.barkod-input'); ni[ni.length-1].value = code;
+            }, 100); }
         }
+        window.history.replaceState({}, document.title, window.location.pathname);
     }
 
     function startScannerEx(targetId) {
-        // Binary Eye'a git ve geri bu sayfaya barkodla dön
         const callback = window.location.origin + window.location.pathname + "?target=" + targetId + "&barcode={code}";
         window.location.href = "intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;S.browser_fallback_url=" + encodeURIComponent(callback) + ";end";
     }
 
-    // --- UYGULAMA FONKSİYONLARI ---
-    function initApp() {
-        db.ref('transferler/canli_akis').on('value', snap => {
-            const cont = document.getElementById('akis-container'); cont.innerHTML = "";
-            snap.forEach(i => {
-                const d = i.val(); const key = i.key;
-                const row = `<div class="excel-row-container" style="padding:5px; font-size:10px;">
-                    <div style="flex:1"><b>${d.urun}</b><br>${d.barkod}</div>
-                    <div style="flex:1">${d.yer}</div>
-                    <div style="flex:1"><input type="text" value="${d.kp||''}" id="kp-${key}" class="kp-input-large"></div>
-                    <div style="width:40px" onclick="startScannerEx('kp-${key}')">🔍</div>
-                </div>`;
-                cont.insertAdjacentHTML('afterbegin', row);
-            });
-        });
-        addRowEx();
+    function formatKP(text) {
+        if(!text) return "";
+        return text.split(' ').slice(1).join(' ').replace(/-İzmir Şubesi/gi, '').trim();
     }
 
-    function addRowEx(type = "ÇIKIŞ") {
+    function init() {
+        db.ref('transferler/canli_akis').on('value', snap => {
+            const container = document.getElementById('akis-container'); container.innerHTML = "";
+            snap.forEach(i => {
+                const d = i.val(); const key = i.key;
+                const html = `<div class="excel-row-container" style="padding:5px;">
+                    <div style="flex:2"><b>${d.urun}</b><br><small>${d.barkod}</small></div>
+                    <div style="flex:2">${d.yer}</div>
+                    <div style="flex:1"><input type="text" class="kp-input-large" value="${d.kp||''}" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})"></div>
+                    <div style="padding:10px" onclick="startScannerEx('kp-${key}')">🔍</div>
+                </div>`;
+                container.insertAdjacentHTML('afterbegin', html);
+            });
+        });
+        if(document.getElementById('items-container').innerHTML === "") { addRowEx(); }
+    }
+
+    function addRowEx() {
         const id = 'brk-' + Math.random().toString(36).substr(2, 5);
         const html = `<div class="excel-row-container">
-            <select class="type-select ${type==='ÇIKIŞ'?'bg-out':'bg-in'}"><option value="ÇIKIŞ">VER</option><option value="GİRİŞ">AL</option></select>
+            <select class="type-select bg-out"><option value="ÇIKIŞ">VER</option><option value="GİRİŞ">AL</option></select>
             <div class="scan-container"><input type="number" id="${id}" class="barkod-input" placeholder="Barkod..."><span class="magnifier-btn" onclick="startScannerEx('${id}')">🔍</span></div>
-            <select class="urun-select"><option>Pc</option><option>Monitör</option><option>Yazıcı</option></select>
+            <select class="urun-select"><option>Pc</option><option>Monitör</option><option>Yazıcı</option><option>Tarayıcı</option></select>
         </div>`;
         document.getElementById('items-container').insertAdjacentHTML('beforeend', html);
     }
@@ -247,12 +215,12 @@
                     barkod: b,
                     yer: target,
                     gonderen: uName,
-                    saat: new Date().toLocaleTimeString()
+                    status: "BEKLEMEDE",
+                    saat: new Date().toLocaleTimeString('tr-TR')
                 });
             }
         });
-        alert("Kaydedildi");
-        document.getElementById('items-container').innerHTML = ""; addRowEx();
+        document.getElementById('items-container').innerHTML = ""; addRowEx(); alert("Kaydedildi");
     }
 
     function tabEx(id, el) {
@@ -272,6 +240,7 @@
             list.appendChild(d);
         });
     }
+    function toggleTruckMode() { const isT = document.getElementById('to-my-truck').checked; document.getElementById('target-sube').value = isT ? uFullKey : ""; }
     function logout() { localStorage.clear(); location.reload(); }
 </script>
 </body>
