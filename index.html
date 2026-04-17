@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v73.5</title>
+    <title>S016 Depo Takip v72.9</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
         :root { --excell-green: #217346; --border: #d4d4d4; --bg: #f3f3f3; }
         .bg-in { background-color: #f8dbdb !important; color: #d83b01 !important; font-weight: bold; } 
         .bg-out { background-color: #d9e9f3 !important; color: #0078d4 !important; font-weight: bold; } 
+        
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; font-size: 11px; }
         body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
@@ -23,36 +25,54 @@
         .sube-item { padding:15px; border-bottom:1px solid #f0f0f0; font-size:13px; color: #333; cursor: pointer; }
         .sube-item:active { background: #e8f5e9; }
         
+        .add-btn-list { padding: 15px; background: #e8f5e9; color: var(--excell-green); text-align: center; font-weight: bold; cursor: pointer; border-top: 1px solid #ddd; }
+
         .excel-bar { background: var(--excell-green); color: white; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
         .user-cell { background: #fff; color: #333; padding: 3px 10px; border: 1px solid #999; font-weight: bold; display: flex; align-items: center; gap: 8px; }
         .logout-btn { color: #dc3545; cursor: pointer; font-size: 9px; border-left: 1px solid #ccc; padding-left: 8px; }
         
         .content { flex: 1; overflow-y: auto; padding: 5px; padding-bottom: 85px; }
-        .excel-table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
-        .excel-table th, .excel-table td { border: 1px solid var(--border); padding: 8px 4px; text-align: left; }
-        .excel-table th { background: #ebf1de; font-weight: bold; color: #444; }
         
+        .excel-table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
+        .excel-table th, .excel-table td { border: 1px solid var(--border); padding: 8px 4px; text-align: left; overflow: hidden; }
+        .excel-table th { background: #ebf1de; font-size: 10px; font-weight: bold; color: #444; }
+        
+        .depo-row { cursor: pointer; transition: background 0.2s; }
+        .depo-row:active { background: #fff3cd; }
         .row-waiting { background-color: #f8d7da !important; }
         .row-onay { background-color: #fff3cd !important; }
-        .row-done { background-color: #d4edda !important; }
+        .row-done { background-color: #d4edda !important; color: #444; }
+        
         .btn-status { width: 100%; padding: 8px 2px; border: none; border-radius: 3px; font-weight: bold; color: white; font-size: 10px; }
         .bg-waiting { background: #dc3545; }
         .bg-onay { background: #ff9800; }
         .bg-done { background: #28a745; }
 
         .excel-row-container { display: flex; border: 1px solid #ccc; background: #fff; margin-bottom: 3px; min-height: 44px; align-items: center; border-radius: 4px; overflow: hidden; }
-        .type-select { width: 60px; height: 44px; border: none; border-right: 1px solid #ccc; font-weight: bold; text-align: center; }
-        .urun-select { flex: 2; height: 44px; border: none; padding-left: 5px; font-weight: bold; }
+        .type-select { width: 60px; height: 44px; border: none; border-right: 1px solid #ccc; font-weight: bold; text-align: center; outline: none; }
+        .urun-select { flex: 2; height: 44px; border: none; padding-left: 5px; font-weight: bold; outline: none; background: transparent; }
         .scan-container { position: relative; display: flex; align-items: center; flex: 2; height: 44px; }
-        .barkod-input { width: 100%; height: 100%; border: none; border-right: 1px solid #ccc; padding-left: 10px; font-size: 13px; }
-        .magnifier-btn { position: absolute; right: 5px; cursor: pointer; font-size: 18px; color: var(--excell-green); }
+        .barkod-input { width: 100%; height: 100%; border: none; border-right: 1px solid #ccc; padding: 0 30px 0 10px; font-size: 13px; outline: none; }
+        
+        .kp-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
         .kp-input-large { width: 100%; border: 1px solid #ddd; padding: 4px 25px 4px 4px; border-radius: 2px; height: 26px; font-size: 10px; }
+        .magnifier-btn { position: absolute; right: 5px; cursor: pointer; font-size: 14px; color: var(--excell-green); user-select: none; }
+        
+        #camera-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:3000; padding:10px; flex-direction:column; justify-content:center; }
+        #reader { width:100%; max-width:400px; margin:auto; background:white; border-radius:8px; overflow:hidden; }
+        #camera-close-btn { width:40px; height:40px; background:white; border-radius:50%; color:red; font-size:24px; font-weight:bold; border:none; position:absolute; top:20px; right:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px rgba(0,0,0,0.3); }
+        #flash-btn { width:40px; height:40px; background:white; border-radius:50%; color:#333; font-size:20px; border:none; position:absolute; top:20px; left:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px rgba(0,0,0,0.3); }
+
+        .excel-actions { display: flex; gap: 5px; margin-top: 8px; }
+        .btn-excel-add { flex: 1; padding: 12px; border: 1px solid #ccc; font-weight: bold; background: white; border-radius: 4px; cursor: pointer; }
+        .btn-excel-save { flex: 1; padding: 12px; background: var(--excell-green); color: white; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; }
         
         .excel-nav { height: 65px; background: #fff; display: flex; position: fixed; bottom: 0; width: 100%; box-shadow: 0 -4px 15px rgba(0,0,0,0.1); padding: 8px 10px; gap: 8px; z-index: 2500; }
-        .excel-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; font-size: 12px; }
-        .excel-nav-item.active { background: #e8f5e9; color: var(--excell-green); font-weight: bold; border: 2px solid var(--excell-green); }
+        .excel-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; cursor: pointer; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; transition: all 0.2s ease; font-size: 12px; }
+        .excel-nav-item.active { background: #e8f5e9; color: var(--excell-green); font-weight: bold; border: 2px solid var(--excell-green); box-shadow: 0 3px 8px rgba(33,115,70,0.3); transform: translateY(-3px); }
 
         #login-screen { position: fixed; inset: 0; background: var(--excell-green); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .rem-box { margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -61,52 +81,74 @@
     <h2 style="letter-spacing: 2px;">S016 DEPO TAKİP</h2>
     <input type="email" id="email" placeholder="E-posta" style="width:80%; margin-bottom:10px; padding:12px; border-radius:4px; border:none;">
     <input type="password" id="pass" placeholder="Şifre" style="width:80%; margin-bottom:10px; padding:12px; border-radius:4px; border:none;">
-    <label style="margin-bottom:15px; display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" id="rem-check" checked> Beni Hatırla
+    <label class="rem-box">
+        <input type="checkbox" id="rem-check"> Beni Hatırla
     </label>
     <button onclick="login()" style="width:80%; padding:15px; font-weight:bold; background:white; color:var(--excell-green); border:none; border-radius:4px;">GİRİŞ YAP</button>
 </div>
 
+<div id="transfer-modal">
+    <div class="modal-box">
+        <div class="modal-search">
+            <h3 id="transfer-item-title" style="margin:0 0 10px 0; color:var(--excell-green);">Ürün Gönder</h3>
+            <input type="text" id="transfer-ara" placeholder="Hedef Araç veya Şube ara..." oninput="filterTransferList()">
+        </div>
+        <div class="modal-list" id="transfer-list-body"></div>
+        <button onclick="closeTransferModal()" style="padding:15px; background:#444; color:white; border:none; font-weight:bold;">VAZGEÇ</button>
+    </div>
+</div>
+
+<div id="sube-modal">
+    <div class="modal-box">
+        <div class="modal-search"><input type="text" id="sube-ara" placeholder="Şube ara (Kod veya İsim)..." oninput="filterSubeler()"></div>
+        <div class="modal-list" id="modal-list-body"></div>
+        <div class="add-btn-list" onclick="manualAdd()">➕ LİSTEDE OLMAYAN ŞUBEYİ EKLE</div>
+        <button onclick="closeModal()" style="padding:15px; background:#444; color:white; border:none; font-weight:bold;">VAZGEÇ</button>
+    </div>
+</div>
+
+<div id="camera-modal">
+    <button id="flash-btn" onclick="toggleFlash()">🔦</button>
+    <button id="camera-close-btn" onclick="stopScannerEx()">×</button>
+    <div id="reader"></div>
+</div>
+
 <div class="excel-bar">
-    <div style="font-weight:bold;">S016 v73.5</div>
+    <div style="font-weight:bold;">S016_DEPO_TAKIP_v72.9</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
 <div class="content">
     <div id="p-islem" class="app-page">
         <div style="background:#fff; padding:10px; border:1px solid #ccc; margin-bottom:5px; border-radius:4px;">
-            <input type="text" id="target-sube" placeholder="Hedef Lokasyon Seçin" readonly onclick="openModal()" style="width:100%; padding:12px; background:#fffde7; border:1px solid #ccc; font-weight:bold; color:#000;">
-            <label style="display:block; margin-top:10px;"><input type="checkbox" id="to-my-truck" onchange="toggleTruckMode()"> 🚛 ARACIMA TRANSFER ET</label>
+            <input type="text" id="target-sube" placeholder="Hedef Lokasyon Seçin" readonly onclick="openModal()" style="width:100%; margin-bottom:10px; padding:12px; background:#fffde7; border:1px solid #ccc; font-weight:bold; border-radius:4px; color: #000;">
+            <label style="display:flex; align-items:center; gap:10px; color:var(--excell-green); font-weight:bold;">
+                <input type="checkbox" id="to-my-truck" onchange="toggleTruckMode()"> 🚛 ARACIMA TRANSFER ET
+            </label>
         </div>
         <div id="items-container"></div>
-        <div style="display:flex; gap:5px; margin-top:10px;">
-            <button onclick="addRowEx()" style="flex:1; padding:12px; font-weight:bold;">➕ Satır Ekle</button>
-            <button onclick="saveAllEx()" style="flex:1; padding:12px; background:var(--excell-green); color:white; border:none; font-weight:bold;">💾 KAYDET</button>
+        <div id="action-area" class="excel-actions">
+            <button class="btn-excel-add" onclick="addRowEx()">➕ Satır Ekle</button>
+            <button class="btn-excel-save" id="btnSave" onclick="saveAllEx()">💾 KAYDET VE GÖNDER</button>
         </div>
     </div>
+
     <div id="p-akis" class="app-page" style="display:none;">
         <div style="padding:10px; background:#fff; border-bottom:1px solid #ccc; margin-bottom:5px; position:sticky; top:0; z-index:10;">
-            <input type="text" id="akis-ara" placeholder="Lokasyon, Ürün veya Barkod Ara..." oninput="filterAkis()" style="width:100%; padding:12px; border:2px solid var(--excell-green); border-radius:4px; font-size:13px; outline:none; font-weight:bold;">
+            <input type="text" id="akis-ara" placeholder="Lokasyon, Ürün, Barkod veya Asistan Ara..." oninput="filterAkis()" style="width:100%; padding:12px; border:2px solid var(--excell-green); border-radius:4px; font-size:13px; outline:none; font-weight:bold;">
         </div>
         <div id="akis-container"></div>
     </div>
+    
     <div id="p-depo" class="app-page" style="display:none;">
         <div id="depoExList"></div>
-    </div>
-</div>
-
-<div id="sube-modal">
-    <div class="modal-box">
-        <div class="modal-search"><input type="text" id="sube-ara" placeholder="Şube ara..." oninput="filterSubeler()"></div>
-        <div class="modal-list" id="modal-list-body"></div>
-        <button onclick="closeModal()" style="padding:15px; background:#444; color:white; border:none;">KAPAT</button>
     </div>
 </div>
 
 <div class="excel-nav">
     <div class="excel-nav-item active" onclick="tabEx('islem', this)">📝 Form</div>
     <div class="excel-nav-item" onclick="tabEx('akis', this)">📊 Akış</div>
-    <div class="excel-nav-item" onclick="tabEx('depo', this)">📦 Depo</div>
+    <div class="excel-nav-item" onclick="tabEx('depo', this)">📦 Depolar</div>
 </div>
 
 <script>
@@ -123,7 +165,18 @@
     const db = firebase.database();
     
     let uName = ""; let uFullKey = ""; let uMail = "";
-    
+    let selectedItemForTransfer = null;
+    let html5QrcodeScannerEx = null;
+    let flashOn = false;
+
+    const aracMap = {
+        "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
+        "dokocadag@ziraatbank.com.tr": { ad: "DOĞAÇ", kod: "s573 Doğaç" },
+        "taylansahin@ziraatbank.com.tr": { ad: "TAYLAN", kod: "s574 Taylan" },
+        "adincel@ziraatbank.com.tr": { ad: "ALİ RIZA", kod: "s569 Ali Rıza" },
+        "ahaksu@ziraatbank.com.tr": { ad: "HALUK", kod: "s528 Haluk" }
+    };
+
     const staticSubeler = [
         "S016 İzmir Saha Depo", "68 Bergama-İzmir Şubesi", "137 İzmir Şubesi", "138 Urla-İzmir Şubesi", 
         "139 Bayındır-İzmir Şubesi", "140 Tire-İzmir Şubesi", "141 Çeşme-İzmir Şubesi", "142 Seferihisar-İzmir Şubesi", 
@@ -159,76 +212,118 @@
         "2697 Atatürk Hastanesi-İzmir Şubesi"
     ];
     let dynamicSubeler = [];
-
-    const aracMap = {
-        "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
-        "dokocadag@ziraatbank.com.tr": { ad: "DOĞAÇ", kod: "s573 Doğaç" },
-        "taylansahin@ziraatbank.com.tr": { ad: "TAYLAN", kod: "s574 Taylan" },
-        "adincel@ziraatbank.com.tr": { ad: "ALİ RIZA", kod: "s569 Ali Rıza" },
-        "ahaksu@ziraatbank.com.tr": { ad: "HALUK", kod: "s528 Haluk" }
-    };
-
+    
     window.onload = function() {
-        const mail = localStorage.getItem('s016_mail');
-        const pass = localStorage.getItem('s016_pass');
-        if (mail && pass) {
-            document.getElementById('email').value = mail;
-            document.getElementById('pass').value = pass;
-            login(true);
+        const savedMail = localStorage.getItem('s016_mail');
+        const savedPass = localStorage.getItem('s016_pass');
+        if(savedMail && savedPass) {
+            document.getElementById('email').value = savedMail;
+            document.getElementById('pass').value = savedPass;
+            document.getElementById('rem-check').checked = true;
         }
     };
 
-    function login(isAuto = false) {
-        const e = document.getElementById('email').value.trim().toLowerCase();
-        const p = document.getElementById('pass').value;
-        firebase.auth().signInWithEmailAndPassword(e, p).then(u => {
-            localStorage.setItem('s016_mail', e); localStorage.setItem('s016_pass', p);
-            uMail = e; uName = (aracMap[e] || {ad: e.split('@')[0].toUpperCase()}).ad;
-            uFullKey = (aracMap[e] || {kod: e.split('@')[0]}).kod;
-            document.getElementById('userTag').innerHTML = `${uName} <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>`;
-            document.getElementById('login-screen').style.display = 'none';
-            init();
-            
-            const params = new URLSearchParams(window.location.search);
-            const barcode = params.get('barcode');
-            if(barcode) processBarcode(barcode, params.get('target'));
-        }).catch(() => { if(!isAuto) alert("Giriş Hatalı!"); });
+    function startScannerEx(targetInputId) {
+        document.getElementById('camera-modal').style.display = 'flex';
+        html5QrcodeScannerEx = new Html5Qrcode("reader");
+        flashOn = false;
+
+        html5QrcodeScannerEx.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 150 } },
+            (decodedText) => {
+                const input = document.getElementById(targetInputId);
+                if(input) {
+                    input.value = decodedText;
+                    if(targetInputId.startsWith('kp-')) {
+                        const dbKey = targetInputId.replace('kp-', '');
+                        db.ref('transferler/canli_akis/' + dbKey).update({kp: decodedText});
+                    }
+                }
+                stopScannerEx();
+            }
+        ).catch(err => { console.error(err); stopScannerEx(); });
     }
 
-    function processBarcode(code, target) {
-        if(target && target.startsWith('kp-')) {
-            db.ref('transferler/canli_akis/' + target.replace('kp-', '')).update({kp: code});
-            tabEx('akis', document.querySelectorAll('.excel-nav-item')[1]);
+    function toggleFlash() {
+        if (!html5QrcodeScannerEx) return;
+        flashOn = !flashOn;
+        html5QrcodeScannerEx.applyVideoConstraints({
+            advanced: [{ torch: flashOn }]
+        }).catch(() => alert("Fener desteklenmiyor."));
+    }
+
+    function stopScannerEx() {
+        if(html5QrcodeScannerEx) {
+            html5QrcodeScannerEx.stop().then(() => {
+                html5QrcodeScannerEx = null;
+                document.getElementById('camera-modal').style.display = 'none';
+            }).catch(() => {
+                html5QrcodeScannerEx = null;
+                document.getElementById('camera-modal').style.display = 'none';
+            });
         } else {
-            const inputs = document.querySelectorAll('.barkod-input');
-            let found = false;
-            for(let i=0; i<inputs.length; i++) {
-                if(inputs[i].value === "") { inputs[i].value = code; found = true; break; }
-            }
-            if(!found) { 
-                addRowEx("ÇIKIŞ"); 
-                setTimeout(() => {
-                    const ni = document.querySelectorAll('.barkod-input'); 
-                    ni[ni.length-1].value = code;
-                }, 100); 
-            }
+            document.getElementById('camera-modal').style.display = 'none';
         }
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
-    function startScannerEx(targetId) {
-        const returnUrl = window.location.origin + window.location.pathname + "?target=" + targetId + "&barcode={CODE}";
-        const intentUrl = "intent://scan/?ret=" + encodeURIComponent(returnUrl) + "#Intent;scheme=zxing;package=de.markusfisch.android.binaryeye;S.browser_fallback_url=" + encodeURIComponent(window.location.href) + ";end";
-        window.location.href = intentUrl;
     }
 
     function formatKP(text) {
         if(!text) return "";
         let parts = text.split(' ');
         if(/^\d+$/.test(parts[0])) {
-            return parts.slice(1).join(' ').replace(/-İzmir Şubesi/gi, '').replace(/-Manisa Şubesi/gi, '').replace(/Şubesi/gi, '').trim();
+            return parts.slice(1).join(' ')
+                        .replace(/-İzmir Şubesi/gi, '')
+                        .replace(/-Manisa Şubesi/gi, '')
+                        .replace(/Şubesi/gi, '')
+                        .trim();
         }
         return text; 
+    }
+
+    function login() {
+        const e = document.getElementById('email').value.trim().toLowerCase();
+        const p = document.getElementById('pass').value;
+        const isRem = document.getElementById('rem-check').checked;
+
+        firebase.auth().signInWithEmailAndPassword(e, p).then(u => {
+            if(isRem) {
+                localStorage.setItem('s016_mail', e);
+                localStorage.setItem('s016_pass', p);
+            } else {
+                localStorage.removeItem('s016_mail');
+                localStorage.removeItem('s016_pass');
+            }
+
+            uMail = e;
+            const info = aracMap[e] || { ad: e.split('@')[0].toUpperCase(), kod: e.split('@')[0] };
+            uName = info.ad; uFullKey = info.kod;
+            
+            let displayUser = uName;
+            if(uMail === "ekaradeniz@ziraatbank.com.tr") {
+                displayUser = `<span style="color:red; font-size:9px;">KONTROLÖR:</span> ` + uName;
+                document.getElementById('btnSave').style.display = "none";
+            }
+            
+            document.getElementById('userTag').innerHTML = `
+                ${displayUser} 
+                <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>
+            `;
+
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('items-container').innerHTML = "";
+            
+            addRowEx("ÇIKIŞ"); 
+            addRowEx("GİRİŞ");
+            init();
+        }).catch(() => alert("Giriş Hatalı!"));
+    }
+
+    function logout() {
+        if(confirm("Oturumu kapatmak istediğinize emin misiniz?")) {
+            firebase.auth().signOut().then(() => {
+                location.reload();
+            });
+        }
     }
 
     function init() {
@@ -241,29 +336,50 @@
         db.ref('transferler/canli_akis').on('value', snap => {
             const container = document.getElementById('akis-container');
             if(!container) return;
-            const groupedData = {}; const groupOrder = [];
+            
+            const groupedData = {};
+            const groupOrder = [];
+            
             snap.forEach(i => {
-                const d = i.val(); const key = i.key; const groupKey = d.yer + "|||" + (d.saat || "Belirtilmemiş");
-                if(!groupedData[groupKey]) groupedData[groupKey] = [];
+                const d = i.val();
+                const key = i.key;
+                
+                const groupKey = d.yer + "|||" + (d.saat || "Belirtilmemiş");
+                
+                if(!groupedData[groupKey]) {
+                    groupedData[groupKey] = [];
+                }
+                
                 groupedData[groupKey].unshift({ key, d });
+
                 const idx = groupOrder.indexOf(groupKey);
-                if(idx > -1) groupOrder.splice(idx, 1);
+                if(idx > -1) {
+                    groupOrder.splice(idx, 1);
+                }
                 groupOrder.unshift(groupKey);
             });
 
             let fullHtml = "";
+
             groupOrder.forEach(gKey => {
-                const parts = gKey.split("|||"); const yer = parts[0]; const saat = parts[1];
+                const parts = gKey.split("|||");
+                const yer = parts[0];
+                const saat = parts[1];
+
                 let rowsHtml = "";
                 groupedData[gKey].forEach(item => {
-                    const key = item.key; const d = item.d;
-                    const isD = d.status === "YAPILDI"; const isOnay = d.status === "ONAY BEKLIYOR";
+                    const key = item.key;
+                    const d = item.d;
+                    const isD = d.status === "YAPILDI";
+                    const isOnay = d.status === "ONAY BEKLIYOR";
                     const isReceiver = d.yer === uFullKey;
                     const isPassiveKP = (d.tip === "ÇIKIŞ" || d.tip === "VER");
 
                     let actionHtml = "";
                     if(isOnay) {
-                        actionHtml = isReceiver ? `<button class="btn-status bg-onay" onclick="approveTransfer('${key}')">KABUL ET</button>` : `<span style="color:orange; font-weight:bold;">ONAYDA</span>`;
+                        actionHtml = isReceiver 
+                            ? `<button class="btn-status bg-onay" onclick="approveTransfer('${key}')">KABUL ET</button>`
+                            : `<span style="color:orange; font-weight:bold;">ONAYDA</span>`;
                     } else {
                         actionHtml = `<button class="btn-status ${isD?'bg-done':'bg-waiting'}" onclick="db.ref('transferler/canli_akis/${key}').update({status:('${d.status}'==='BEKLEMEDE'?'YAPILDI':'BEKLEMEDE')})">${isD?'YAPILDI':'BEKLİYOR'}</button>`;
                     }
@@ -273,15 +389,17 @@
                         kpCell = `<input type="text" class="kp-input-large" readonly style="background:#eee; border:none; color:#666;" value="${d.kp||''}">`;
                     } else {
                         kpCell = `
-                            <div style="position:relative; display:flex; align-items:center;">
+                            <div class="kp-wrapper">
                                 <input type="text" id="kp-${key}" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})" value="${d.kp||''}">
-                                <span style="position:absolute; right:5px; cursor:pointer; font-size:18px;" onclick="startScannerEx('kp-${key}')">🔍</span>
+                                <span class="magnifier-btn" onclick="startScannerEx('kp-${key}')">🔍</span>
                             </div>`;
                     }
 
+                    const checkMark = isD ? ' <span style="font-size:12px;">✅</span>' : '';
+
                     rowsHtml += `
                     <tr class="${isD?'row-done':(isOnay?'row-onay':'row-waiting')}">
-                        <td style="width:30%;"><b>${d.urun}</b><br><small>${d.barkod}${isD?'✅':''}</small></td>
+                        <td style="width:30%;"><b>${d.urun}</b><br><small style="color:#555;">${d.barkod}${checkMark}</small></td>
                         <td style="width:20%;">${d.gonderen}</td>
                         <td style="width:25%;">${kpCell}</td>
                         <td style="width:25%;">${actionHtml}</td>
@@ -291,15 +409,30 @@
                 fullHtml += `
                 <div style="margin-bottom:15px; border:1px solid var(--excell-green); border-radius:4px; overflow:hidden; background:#fff;">
                     <div style="background:var(--excell-green); color:white; padding:8px 10px; font-weight:bold; font-size:12px; display:flex; justify-content:space-between;">
-                        <span>🏢 ${yer}</span><span style="font-size:10px; opacity:0.8;">${saat}</span>
+                        <span>🏢 ${yer}</span>
+                        <span style="font-size:10px; font-weight:normal; opacity:0.8;">${saat}</span>
                     </div>
                     <table class="excel-table" style="border:none;">
-                        <thead><tr><th>Ürün-Barkod</th><th>Asistan</th><th>KP NO</th><th>Transfer</th></tr></thead>
-                        <tbody>${rowsHtml}</tbody>
+                        <thead>
+                            <tr>
+                                <th style="width:30%;">Ürün-Barkod</th>
+                                <th style="width:20%;">Asistan</th>
+                                <th style="width:25%;">KP NO</th>
+                                <th style="width:25%;">Transfer</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
                     </table>
                 </div>`;
             });
+            
             container.innerHTML = fullHtml;
+            
+            if(document.getElementById('akis-ara') && document.getElementById('akis-ara').value !== '') {
+                filterAkis();
+            }
         });
 
         db.ref('depolar').on('value', snap => {
@@ -307,7 +440,13 @@
             snap.forEach(d => {
                 const isMyDepo = d.key === uFullKey;
                 let rws = ""; 
-                d.forEach(r => { const v = r.val(); rws += `<tr class="${isMyDepo?'depo-row':''}"><td>${v.urun}</td><td>${v.barkod}</td></tr>`; });
+                d.forEach(r => { 
+                    const v = r.val(); 
+                    rws += `<tr class="${isMyDepo?'depo-row':''}" onclick="${isMyDepo?`openTransferModal('${v.urun}','${v.barkod}')`:''}">
+                        <td>${v.urun}</td>
+                        <td>${v.barkod}</td>
+                    </tr>`; 
+                });
                 c.innerHTML += `<div style="margin-bottom:10px; border:1px solid #ccc;"><div style="background:#217346; color:white; padding:8px; font-weight:bold;">📦 ${d.key} Arac Depo</div><table class="excel-table">${rws}</table></div>`;
             });
         });
@@ -315,8 +454,9 @@
     }
 
     function addRowEx(type = "ÇIKIŞ") {
-        const rowId = 'brk-' + Math.random().toString(36).substr(2, 5);
-        const div = document.createElement('div'); div.className = "excel-row-container";
+        const rowId = 'brk-' + Math.random().toString(36).substr(2, 9);
+        const div = document.createElement('div'); 
+        div.className = "excel-row-container";
         div.innerHTML = `
             <select class="type-select ${type==='ÇIKIŞ'?'bg-out':'bg-in'}" onchange="this.classList.toggle('bg-out', this.value==='ÇIKIŞ'); this.classList.toggle('bg-in', this.value==='GİRİŞ')">
                 <option value="ÇIKIŞ" ${type==='ÇIKIŞ'?'selected':''}>VER</option>
@@ -327,8 +467,51 @@
                 <span class="magnifier-btn" onclick="startScannerEx('${rowId}')">🔍</span>
             </div>
             <select class="urun-select" onchange="checkNewUrun(this)"></select>`;
+            
         document.getElementById('items-container').appendChild(div);
         updateAllSelects();
+    }
+
+    function manualAdd() { const n = prompt("Yeni Şube/Lokasyon?"); if(n) db.ref('ayarlar/sube_listesi').push(n); }
+    function openTransferModal(urun, barkod) { selectedItemForTransfer = { urun, barkod }; document.getElementById('transfer-item-title').innerText = "Gönder: " + urun; document.getElementById('transfer-modal').style.display = 'block'; filterTransferList(); }
+    function closeTransferModal() { document.getElementById('transfer-modal').style.display = 'none'; selectedItemForTransfer = null; }
+    function openModal() { document.getElementById('sube-modal').style.display = 'block'; filterSubeler(); }
+    function closeModal() { document.getElementById('sube-modal').style.display = 'none'; }
+    function checkNewUrun(sel) { if(sel.value === "ADD_NEW") { const n = prompt("Yeni Envanter?"); if(n) { db.ref('ayarlar/urun_listesi').push(n); setTimeout(() => sel.value = n, 500); } else sel.selectedIndex = 0; } }
+
+    function filterTransferList() {
+        const ara = document.getElementById('transfer-ara').value.toLocaleUpperCase('tr-TR');
+        const list = document.getElementById('transfer-list-body'); list.innerHTML = "";
+        Object.values(aracMap).forEach(a => {
+            if(a.kod !== uFullKey && (a.ad.includes(ara) || a.kod.toLocaleUpperCase('tr-TR').includes(ara))) {
+                const d = document.createElement('div'); d.className = "sube-item"; d.innerHTML = `🚛 <b>${a.ad}</b> (${a.kod})`; d.onclick = () => confirmTransfer(a.kod); list.appendChild(d);
+            }
+        });
+        const all = [...staticSubeler, ...dynamicSubeler];
+        all.filter(s => s.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
+            const d = document.createElement('div'); d.className = "sube-item"; d.innerText = "🏢 " + s; d.onclick = () => confirmTransfer(s); list.appendChild(d);
+        });
+    }
+
+    function confirmTransfer(target) {
+        if(!selectedItemForTransfer) return;
+        const isInterCar = Object.values(aracMap).some(a => a.kod === target);
+        const status = isInterCar ? "ONAY BEKLIYOR" : "BEKLEMEDE";
+        const kpFormatted = formatKP(target);
+        const data = { gonderen: uName, yer: target, tip: "ÇIKIŞ", barkod: selectedItemForTransfer.barkod, urun: selectedItemForTransfer.urun, status: status, kp: kpFormatted, saat: new Date().toLocaleTimeString('tr-TR'), gonderen_kod: uFullKey };
+        db.ref('transferler/canli_akis').push(data);
+        alert("İşlem akışa kaydedildi.");
+        closeTransferModal();
+        tabEx('akis', document.querySelectorAll('.excel-nav-item')[1]);
+    }
+
+    function approveTransfer(key) {
+        db.ref('transferler/canli_akis/' + key).once('value', s => {
+            const d = s.val();
+            db.ref('depolar/' + d.gonderen_kod).once('value', ds => { ds.forEach(item => { if(item.val().barkod === d.barkod) item.ref.remove(); }); });
+            db.ref('depolar/' + uFullKey).push({ urun: d.urun, barkod: d.barkod });
+            db.ref('transferler/canli_akis/' + key).update({status: "YAPILDI"});
+        });
     }
 
     function updateAllSelects() {
@@ -337,7 +520,8 @@
             snap.forEach(i => { if(!list.includes(i.val())) list.push(i.val()); });
             document.querySelectorAll('.urun-select').forEach(sel => {
                 const old = sel.value;
-                sel.innerHTML = list.map(u => `<option value="${u}">${u}</option>`).join('') + `<option value="ADD_NEW" style="color:#217346; font-weight:bold;">➕ YENİ EKLE</option>`;
+                let h = ""; list.forEach(u => h += `<option value="${u}">${u}</option>`);
+                sel.innerHTML = h + `<option value="ADD_NEW" style="color:#217346; font-weight:bold;">➕ YENİ ENVANTER EKLE</option>`;
                 if(old && list.includes(old)) sel.value = old;
             });
         });
@@ -348,8 +532,15 @@
         const toMyTruck = document.getElementById('to-my-truck').checked;
         if(!toMyTruck && (!target || target === "Hedef Lokasyon Seçin")) return alert("Lütfen bir lokasyon seçin!");
 
+        let currentDepoBarkodlar = [];
+        if (toMyTruck) {
+            const snapshot = await db.ref('depolar/' + uFullKey).once('value');
+            snapshot.forEach(child => { currentDepoBarkodlar.push(String(child.val().barkod).trim()); });
+        }
+
         let addedCount = 0;
         const kpFormatted = formatKP(target);
+
         const rowElements = Array.from(document.querySelectorAll('.excel-row-container')).reverse();
 
         rowElements.forEach(row => {
@@ -357,52 +548,70 @@
             const u = row.querySelector('.urun-select').value;
             const type = row.querySelector('.type-select').value;
             if(b) {
-                if(toMyTruck) { 
-                    db.ref('depolar/' + uFullKey).push({ urun: u, barkod: b }); 
+                if(toMyTruck) {
+                    if (!currentDepoBarkodlar.includes(b)) { 
+                        db.ref('depolar/' + uFullKey).push({ urun: u, barkod: b }); 
+                        currentDepoBarkodlar.push(b); addedCount++; 
+                    }
                 } else {
-                    db.ref('transferler/canli_akis').push({ 
-                        gonderen: uName, yer: target, tip: type, barkod: b, urun: u, status: "BEKLEMEDE", 
-                        kp: (type === "ÇIKIŞ" ? kpFormatted : ""), saat: new Date().toLocaleTimeString('tr-TR'), gonderen_kod: uFullKey 
-                    });
+                    const kpVal = (type === "ÇIKIŞ") ? kpFormatted : "";
+                    const data = { gonderen: uName, yer: target, tip: type, barkod: b, urun: u, status: "BEKLEMEDE", kp: kpVal, saat: new Date().toLocaleTimeString('tr-TR'), gonderen_kod: uFullKey };
+                    db.ref('transferler/canli_akis').push(data);
+                    addedCount++;
                 }
-                addedCount++;
             }
         });
-        if (addedCount > 0) { document.getElementById('items-container').innerHTML = ""; addRowEx("ÇIKIŞ"); addRowEx("GİRİŞ"); alert("Kaydedildi."); }
+
+        if (addedCount > 0) { 
+            document.getElementById('items-container').innerHTML = ""; 
+            addRowEx("ÇIKIŞ"); 
+            addRowEx("GİRİŞ"); 
+        }
+        alert(addedCount > 0 ? "Başarıyla kaydedildi." : "Kaydedilecek veri yok.");
     }
 
-    function openModal() { document.getElementById('sube-modal').style.display='block'; filterSubeler(); }
-    function closeModal() { document.getElementById('sube-modal').style.display='none'; }
     function filterSubeler() {
         const ara = document.getElementById('sube-ara').value.toLocaleUpperCase('tr-TR');
         const list = document.getElementById('modal-list-body'); list.innerHTML = "";
-        [...staticSubeler, ...dynamicSubeler].filter(s => s.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
-            const d = document.createElement('div'); d.className = "sube-item"; d.innerText = s;
-            d.onclick = () => { document.getElementById('target-sube').value = s; closeModal(); };
+        const all = [...staticSubeler, ...dynamicSubeler];
+        all.filter(s => s.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
+            const d = document.createElement('div'); d.className = "sube-item"; d.innerText = s; d.onclick = () => { document.getElementById('target-sube').value = s; closeModal(); };
             list.appendChild(d);
         });
     }
-    
+
+    function toggleTruckMode() { const isT = document.getElementById('to-my-truck').checked; document.getElementById('target-sube').value = isT ? uFullKey : ""; document.getElementById('target-sube').style.opacity = isT ? "0.6" : "1"; }
+    function updateSubeCounter() { const total = staticSubeler.length + dynamicSubeler.length; document.getElementById('target-sube').placeholder = `Hedef Lokasyon Seçin (${total})`; }
+    function tabEx(id, el) { document.querySelectorAll('.app-page').forEach(p => p.style.display = 'none'); document.getElementById('p-'+id).style.display = 'block'; document.querySelectorAll('.excel-nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+
     function filterAkis() {
         const ara = document.getElementById('akis-ara').value.toLocaleUpperCase('tr-TR');
-        document.querySelectorAll('#akis-container > div').forEach(wrapper => {
-            const head = wrapper.querySelector('div').innerText.toLocaleUpperCase('tr-TR');
+        const wrappers = document.querySelectorAll('#akis-container > div');
+
+        wrappers.forEach(wrapper => {
+            const locationHeader = wrapper.querySelector('div').innerText.toLocaleUpperCase('tr-TR');
+            const rows = wrapper.querySelectorAll('tbody tr');
             let hasVisibleRow = false;
-            wrapper.querySelectorAll('tbody tr').forEach(row => {
-                if (head.includes(ara) || row.innerText.toLocaleUpperCase('tr-TR').includes(ara)) {
-                    row.style.display = ''; hasVisibleRow = true;
-                } else { row.style.display = 'none'; }
+
+            const locationMatch = locationHeader.includes(ara);
+
+            rows.forEach(row => {
+                const rowText = row.innerText.toLocaleUpperCase('tr-TR');
+                if (locationMatch || rowText.includes(ara)) {
+                    row.style.display = '';
+                    hasVisibleRow = true;
+                } else {
+                    row.style.display = 'none';
+                }
             });
-            wrapper.style.display = (hasVisibleRow || head.includes(ara)) ? '' : 'none';
+
+            if (hasVisibleRow || locationMatch) {
+                wrapper.style.display = '';
+            } else {
+                wrapper.style.display = 'none';
+            }
         });
     }
-
-    function checkNewUrun(sel) { if(sel.value === "ADD_NEW") { const n = prompt("Yeni Envanter?"); if(n) { db.ref('ayarlar/urun_listesi').push(n); setTimeout(() => sel.value = n, 500); } else sel.selectedIndex = 0; } }
-    function toggleTruckMode() { const isT = document.getElementById('to-my-truck').checked; document.getElementById('target-sube').value = isT ? uFullKey : ""; }
-    function updateSubeCounter() { document.getElementById('target-sube').placeholder = `Hedef Lokasyon (${staticSubeler.length + dynamicSubeler.length})`; }
-    function tabEx(id, el) { document.querySelectorAll('.app-page').forEach(p => p.style.display='none'); document.getElementById('p-'+id).style.display='block'; document.querySelectorAll('.excel-nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
-    function logout() { localStorage.clear(); location.reload(); }
-    function approveTransfer(key) { db.ref('transferler/canli_akis/' + key).once('value', s => { const d = s.val(); db.ref('depolar/' + d.gonderen_kod).once('value', ds => { ds.forEach(item => { if(item.val().barkod === d.barkod) item.ref.remove(); }); }); db.ref('depolar/' + uFullKey).push({ urun: d.urun, barkod: d.barkod }); db.ref('transferler/canli_akis/' + key).update({status: "YAPILDI"}); }); }
 </script>
 </body>
 </html>
