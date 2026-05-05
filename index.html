@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v75.5 (Basılı Tut & Tam Yetki)</title>
+    <title>S016 Depo Takip v75.6 (Otomatik Giriş)</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -106,7 +106,7 @@
         <input type="email" id="email" class="login-input" placeholder="E-posta adresiniz">
         <input type="password" id="pass" class="login-input" placeholder="Şifreniz">
         <label class="rem-box">
-            <input type="checkbox" id="rem-check"> Beni Hatırla
+            <input type="checkbox" id="rem-check" checked> Beni Hatırla
         </label>
         <button onclick="login()" style="width:100%; padding:15px; font-weight:bold; background:white; color:var(--excell-green); border:none; border-radius:8px; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer;">GİRİŞ YAP</button>
     </div>
@@ -150,7 +150,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v75.5</div>
+    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v75.6</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -211,7 +211,6 @@
     let selectedAkisGKey = "";
     let currentUrunInputId = null;
 
-    // Sadece senin e-postaların kaldı, diğer tüm personeller temizlendi
     const aracMap = {
         "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
         "ahmetdursunaksu@zbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" }
@@ -377,15 +376,45 @@
         return Array.from(processed.values());
     }
 
-    window.onload = function() {
-        const savedMail = localStorage.getItem('s016_mail');
-        const savedPass = localStorage.getItem('s016_pass');
-        if(savedMail && savedPass) {
-            document.getElementById('email').value = savedMail;
-            document.getElementById('pass').value = savedPass;
-            document.getElementById('rem-check').checked = true;
+    // YENİ: Firebase Otomatik Oturum Dinleyicisi
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            // Kullanıcı zaten giriş yapmış (arka plandan gelmiş veya önceden Beni Hatırla demiş)
+            const e = user.email;
+            uMail = e;
+            const info = aracMap[e] || { ad: e.split('@')[0].toUpperCase(), kod: e.split('@')[0] };
+            uName = info.ad; uFullKey = info.kod;
+            
+            document.getElementById('btnSave').style.display = "block";
+            document.getElementById('btnAddRow').style.display = "block";
+            document.getElementById('userTag').innerHTML = `${uName} <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>`;
+            
+            // Giriş ekranını tamamen gizle
+            document.getElementById('login-screen').style.display = 'none';
+            
+            // Çift satır oluşmasını engellemek için kontrol
+            if (document.getElementById('items-container').innerHTML === "") {
+                cleanDatabase(); 
+                init();
+                setTimeout(() => {
+                    addRowEx("ÇIKIŞ"); 
+                    addRowEx("GİRİŞ");
+                }, 600);
+            }
+        } else {
+            // Kullanıcı giriş yapmamış veya bilerek ÇIKIŞ'a basmış
+            document.getElementById('login-screen').style.display = 'flex';
+            
+            // Eski usül tarayıcı hafızasında kalan e-posta varsa sadece kutuya doldur
+            const savedMail = localStorage.getItem('s016_mail');
+            const savedPass = localStorage.getItem('s016_pass');
+            if(savedMail && savedPass) {
+                document.getElementById('email').value = savedMail;
+                document.getElementById('pass').value = savedPass;
+                document.getElementById('rem-check').checked = true;
+            }
         }
-    };
+    });
 
     function startScannerEx(targetInputId) {
         document.getElementById('camera-modal').style.display = 'flex';
@@ -444,7 +473,12 @@
         const p = document.getElementById('pass').value;
         const isRem = document.getElementById('rem-check').checked;
 
-        firebase.auth().signInWithEmailAndPassword(e, p).then(u => {
+        // Firebase'e beni hatırla ayarını kaydet
+        const persistence = isRem ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+
+        firebase.auth().setPersistence(persistence).then(() => {
+            return firebase.auth().signInWithEmailAndPassword(e, p);
+        }).then(() => {
             if(isRem) {
                 localStorage.setItem('s016_mail', e);
                 localStorage.setItem('s016_pass', p);
@@ -452,26 +486,7 @@
                 localStorage.removeItem('s016_mail');
                 localStorage.removeItem('s016_pass');
             }
-
-            uMail = e;
-            const info = aracMap[e] || { ad: e.split('@')[0].toUpperCase(), kod: e.split('@')[0] };
-            uName = info.ad; uFullKey = info.kod;
-            
-            document.getElementById('btnSave').style.display = "block";
-            document.getElementById('btnAddRow').style.display = "block";
-            
-            document.getElementById('userTag').innerHTML = `${uName} <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>`;
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('items-container').innerHTML = "";
-            
-            cleanDatabase(); 
-            init();
-            
-            setTimeout(() => {
-                addRowEx("ÇIKIŞ"); 
-                addRowEx("GİRİŞ");
-            }, 600);
-            
+            // Başarılı olursa onAuthStateChanged otomatik olarak tetiklenip uygulamayı açacak
         }).catch(() => alert("Giriş Hatalı!"));
     }
 
@@ -633,7 +648,6 @@
         const groupData = currentAkisData[gKey];
         if(!groupData || groupData.length === 0) return;
         
-        // Herkes silindiği için silme butonu her zaman açık
         document.getElementById('btnDeleteGroup').style.display = 'flex'; 
 
         const menu = document.getElementById('akis-context-menu');
