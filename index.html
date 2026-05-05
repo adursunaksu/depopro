@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v74.9</title>
+    <title>S016 Depo Takip v75.1</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -15,10 +15,9 @@
         .bg-out { background-color: #d9e9f3 !important; color: #0078d4 !important; font-weight: bold; } 
         
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; font-size: 12px; transition: background-color 0.2s, box-shadow 0.2s; }
-        body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none; -webkit-user-select: none; }
-        input, select, textarea { user-select: auto; -webkit-user-select: auto; }
+        body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        #sube-modal, #envanter-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:3000; padding:20px; backdrop-filter: blur(3px); }
+        #sube-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:3000; padding:20px; backdrop-filter: blur(3px); }
         .modal-box { background:white; border-radius:12px; height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .modal-search { padding:15px; border-bottom:1px solid #eee; background: #fafafa; }
         .modal-search input { width:100%; padding:14px; border:2px solid var(--excell-green); border-radius:8px; font-size:14px; outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
@@ -29,7 +28,6 @@
         .modal-list { flex:1; overflow-y:auto; background: #fff; }
         .sube-item { padding:15px 20px; border-bottom:1px solid #f5f5f5; font-size:13px; color: #444; cursor: pointer; display: flex; align-items: center; gap: 8px; }
         .sube-item:active { background: #e8f5e9; padding-left: 25px; font-weight: bold; color: var(--excell-green); }
-        .dynamic-sube { background: #fff; }
 
         .excel-bar { background: linear-gradient(135deg, #217346, #165230); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(33,115,70,0.4); z-index: 100; }
         .user-cell { background: rgba(255,255,255,0.9); color: #333; padding: 5px 12px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -44,9 +42,7 @@
         .excel-table th, .excel-table td { border-bottom: 1px solid #eee; padding: 10px 6px; text-align: left; overflow: hidden; }
         .excel-table th { background: #f8f9fa; font-size: 11px; font-weight: bold; color: #555; text-transform: uppercase; }
         
-        .depo-item-row { transition: background 0.2s; cursor: pointer; }
-        .depo-item-row:active { background: #f0f8f1; }
-        
+        .depo-row { transition: background 0.2s; }
         .row-waiting { background-color: #fcf1f2 !important; border-left: 4px solid #dc3545; }
         .row-onay { background-color: #fff8e6 !important; border-left: 4px solid #ff9800; }
         .row-done { background-color: #f1f8f3 !important; border-left: 4px solid #28a745; color: #444; }
@@ -66,7 +62,7 @@
         .kp-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
         .kp-input-large { width: 100%; border: 1px solid #ddd; padding: 6px 30px 6px 8px; border-radius: 4px; height: 30px; font-size: 11px; outline: none; }
         .kp-input-large:focus { border-color: var(--excell-green); box-shadow: 0 0 0 2px rgba(33,115,70,0.1); }
-        .magnifier-btn { position: absolute; right: 8px; cursor: pointer; font-size: 16px; color: var(--excell-green); padding: 5px; }
+        .magnifier-btn { position: absolute; right: 8px; cursor: pointer; font-size: 16px; color: var(--excell-green); user-select: none; padding: 5px; }
         
         #camera-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:3500; padding:10px; flex-direction:column; justify-content:center; backdrop-filter: blur(5px); }
         #reader { width:100%; max-width:400px; margin:auto; background:white; border-radius:12px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -98,8 +94,6 @@
         
         .akis-card { margin-bottom:15px; border-radius:10px; overflow:hidden; background:#fff; box-shadow: var(--shadow); border: 1px solid #eee; }
         .depo-card { margin-bottom:15px; border-radius:12px; overflow:hidden; background:white; box-shadow: var(--shadow); border: 1px solid #eee; }
-        
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -121,30 +115,12 @@
     <div class="context-menu-item" id="btnDeleteGroup" onclick="deleteAkisGroup()">🗑️ Grubu Sil</div>
 </div>
 
-<div id="action-sheet" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:6000; flex-direction:column; justify-content:flex-end; backdrop-filter: blur(2px);">
-    <div style="background:white; border-top-left-radius:20px; border-top-right-radius:20px; padding:25px 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;">
-        <h3 id="as-title" style="margin-top:0; margin-bottom: 20px; color:var(--excell-green); text-align:center; font-size:16px;">İşlem Seç</h3>
-        <button onclick="asEdit()" style="width:100%; padding:15px; margin-bottom:12px; background:#f5f5f5; color:#333; border:1px solid #ddd; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">✏️ Düzenle</button>
-        <button onclick="asDelete()" style="width:100%; padding:15px; margin-bottom:12px; background:#ffebee; color:#d32f2f; border:1px solid #ffcdd2; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">🗑️ Sil</button>
-        <button onclick="closeAS()" style="width:100%; padding:15px; background:#444; color:white; border:none; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">Vazgeç</button>
-    </div>
-</div>
-
 <div id="sube-modal">
     <div class="modal-box">
         <div class="modal-search"><input type="text" id="sube-ara" placeholder="Şube ara (Kod veya İsim)..." oninput="filterSubeler()"></div>
         <div class="add-btn-list" onclick="manualAdd()">➕ LİSTEDE OLMAYAN ŞUBEYİ EKLE</div>
         <div class="modal-list" id="modal-list-body"></div>
-        <button onclick="closeModal()" style="padding:16px; background:#444; color:white; border:none; font-weight:bold; font-size:14px; cursor:pointer;">KAPAT</button>
-    </div>
-</div>
-
-<div id="envanter-modal">
-    <div class="modal-box">
-        <div style="padding:15px; background:linear-gradient(135deg, #217346, #165230); color:white; font-weight:bold; text-align:center; font-size:14px; letter-spacing:1px;">📦 ENVANTER YÖNETİMİ</div>
-        <div class="add-btn-list" onclick="manualEnvanterAdd()">➕ YENİ ENVANTER EKLE</div>
-        <div class="modal-list" id="envanter-list-body"></div>
-        <button onclick="closeEnvanterModal()" style="padding:16px; background:#444; color:white; border:none; font-weight:bold; font-size:14px; cursor:pointer;">KAPAT</button>
+        <button onclick="closeModal()" style="padding:16px; background:#444; color:white; border:none; font-weight:bold; font-size:14px; cursor:pointer;">VAZGEÇ</button>
     </div>
 </div>
 
@@ -154,7 +130,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v74.9</div>
+    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v75.1</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -179,9 +155,6 @@
     </div>
     
     <div id="p-depo" class="app-page" style="display:none;">
-        <div style="padding: 5px 0 15px 0;">
-            <button onclick="openEnvanterModal()" style="width:100%; padding: 14px; background: #e8f5e9; color: var(--excell-green); border: 2px solid #c8e6c9; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">⚙️ ENVANTER ÇEŞİTLERİNİ YÖNET / EKLE</button>
-        </div>
         <div id="depoExList"></div>
     </div>
 </div>
@@ -226,72 +199,42 @@
         "ahaksu@ziraatbank.com.tr": { ad: "HALUK", kod: "s528 Haluk" }
     };
 
-    // SABİT LİSTELER
     const staticSubeler = [
-        "S016 İzmir Saha Depo", "68 Bergama-İzmir Şubesi", "137 İzmir Şubesi", "138 Urla-İzmir Şubesi", "139 Bayındır-İzmir Şubesi", "140 Tire-İzmir Şubesi", "141 Çeşme-İzmir Şubesi", "142 Seferihisar-İzmir Şubesi", "143 Karaburun-İzmir Şubesi", "145 Kemalpaşa-İzmir Şubesi", "146 Menemen-İzmir Şubesi", "188 Manisa Şubesi", "189 Akhisar-Manisa Şubesi", "190 Alaşehir-Manisa Şubesi", "191 Demirci-Manisa Şubesi", "192 Salihli-Manisa Şubesi", "193 Soma-Manisa Şubesi", "194 Kırkağaç-Manisa Şubesi", "195 Turgutlu-Manisa Şubesi", "196 Kula-Manisa Şubesi", "197 Gördes-Manisa Şubesi", "221 Ödemiş-İzmir Şubesi", "317 Torbalı-İzmir Şubesi", "344 Foça-İzmir Şubesi", "386 Kınık-İzmir Şubesi", "387 Dikili-İzmir Şubesi", "410 Çankaya-İzmir Şubesi", "411 Karşıyaka-İzmir Şubesi", "422 Kiraz-İzmir Şubesi", "561 Selçuk-İzmir Şubesi", "562 Selendi-Manisa Şubesi", "572 Sarıgöl-Manisa Şubesi", "590 Alaçatı Çeşme-İzmir Şubesi", "615 Bornova-İzmir Şubesi", "622 Saruhanlı-Manisa Şubesi", "678 Eşrefpaşa-İzmir Şubesi", "711 Buca-İzmir Şubesi", "712 Alsancak-İzmir Şubesi", "714 Aliağa-İzmir Şubesi", "726 Narlıdere-İzmir Şubesi", "730 Ahmetli-Manisa Şubesi", "735 Gölmarmara-Manisa Şubesi", "776 Konak-İzmir Şubesi", "791 Menderes-İzmir Şubesi", "800 Çiğli-İzmir Şubesi", "803 Bayraklı-İzmir Şubesi", "804 Hatay-İzmir Şubesi", "807 Göztepe-İzmir Şubesi", "808 Balçova-İzmir Şubesi", "812 Karabağlar-İzmir Şubesi", "814 Üçyol-İzmir Şubesi", "869 Köprübaşı-Manisa Şubesi", "884 26 Ağustos-İzmir Şubesi", "902 Şirinyer-İzmir Şubesi", "904 Şemikler-İzmir Şubesi", "911 Altındağ-İzmir Şubesi", "928 Gümüşpala-İzmir Şubesi", "934 Denizbostanlı-İzmir Şubesi", "974 Gümüldür Menderes-İzmir Şubesi", "975 MTK Çarşı-İzmir Şubesi", "999 Çamdibi-İzmir Şubesi", "1000 Gaziemir-İzmir Şubesi", "1021 Beydağ-İzmir Şubesi", "1043 Yeşilyurt-İzmir Şubesi", "1089 Alaybey-İzmir Şubesi", "1203 Üçkuyular-İzmir Şubesi", "1204 Kahramanlar-İzmir Şubesi", "1256 Mesir-Manisa Şubesi", "1333 Efes-İzmir Şubesi", "1403 Kazımdirik-İzmir Şubesi", "1446 Ege Tıp-İzmir Şubesi", "1506 9 Eylül Üniversitesi-İzmir Şubesi", "1533 Fahrettin Altay-İzmir Şubesi", "1625 Güzelbahçe-İzmir Şubesi", "1743 Işıkkent-İzmir Şubesi", "1750 İzmir Para Grup Merkezi", "1751 İzmir Kurumsal Şube", "1768 Atatürk OSB-İzmir Ticari Şube", "1778 Yeni Gıda Çarşısı-İzmir Şubesi", "1815 İzmir Bölge Yöneticiliği-Konak", "1816 İzmir Bölge Yöneticiliği-Karşıyaka", "1840 Manisa Bölge Yöneticiliği", "1903 Girne Bulvarı-İzmir Şubesi", "1938 Manisa Ticari Şube", "1958 Karabağlar-İzmir Ticari Şube", "1961 Bozyaka-İzmir Şubesi", "1972 Ayrancılar-İzmir Şubesi", "1984 Manavkuyu-İzmir Şubesi", "1987 Yenişakran Aliağa-İzmir Şubesi", "1992 Gediz Mahallesi-İzmir Şubesi", "1993 Yıkıkkemer-İzmir Şubesi", "2081 Yeni Girne-İzmir Şubesi", "2088 Şehitler-Manisa Şubesi", "2129 Atakent-İzmir Şubesi", "2137 Osmangazi Bayraklı-İzmir Şubesi", "2152 Ataşehir-İzmir Şubesi", "2159 İzmir Caddesi-Manisa Şubesi", "2170 Hasan Tahsin Buca-İzmir Şubesi", "2267 Kemalpaşa-İzmir Ticari Şube", "2319 Cumhuriyet Salihli-Manisa Şubesi", "2335 Bornova Ata-İzmir Şubesi", "2408 Şehzadeler-Manisa Şubesi", "2425 Seydiköy Gaziemir-İzmir Şubesi", "2436 Menderes Caddesi-İzmir Şubesi", "2474 Çağlak Akhisar-Manisa Şubesi", "2477 Ulukent Menemen-İzmir Şubesi", "2494 4. Sanayi Sitesi-İzmir Şubesi", "2496 Ulus Meydanı Ödemiş-İzmir Şubesi", "2504 7 Eylül Turgutlu-Manisa Şubesi", "2514 Çandarlı Dikili-İzmir Şubesi", "2515 1. Sanayi-İzmir Şubesi", "2566 Ertuğrul Mahallesi Torbalı-İzmir Şubesi", "2630 Yeşilova Bornova-İzmir Şubesi", "2642 Yunusemre-Manisa Şubesi", "2673 Bakırçay Bergama-İzmir Şubesi", "2697 Atatürk Hastanesi-İzmir Şubesi"
+        "S016 İzmir Saha Depo", "68 Bergama-İzmir Şubesi", "137 İzmir Şubesi", "138 Urla-İzmir Şubesi", 
+        "139 Bayındır-İzmir Şubesi", "140 Tire-İzmir Şubesi", "141 Çeşme-İzmir Şubesi", "142 Seferihisar-İzmir Şubesi", 
+        "143 Karaburun-İzmir Şubesi", "145 Kemalpaşa-İzmir Şubesi", "146 Menemen-İzmir Şubesi", "188 Manisa Şubesi", 
+        "189 Akhisar-Manisa Şubesi", "190 Alaşehir-Manisa Şubesi", "191 Demirci-Manisa Şubesi", "192 Salihli-Manisa Şubesi", 
+        "193 Soma-Manisa Şubesi", "194 Kırkağaç-Manisa Şubesi", "195 Turgutlu-Manisa Şubesi", "196 Kula-Manisa Şubesi", 
+        "197 Gördes-Manisa Şubesi", "221 Ödemiş-İzmir Şubesi", "317 Torbalı-İzmir Şubesi", "344 Foça-İzmir Şubesi", 
+        "386 Kınık-İzmir Şubesi", "387 Dikili-İzmir Şubesi", "410 Çankaya-İzmir Şubesi", "411 Karşıyaka-İzmir Şubesi", 
+        "422 Kiraz-İzmir Şubesi", "561 Selçuk-İzmir Şubesi", "562 Selendi-Manisa Şubesi", "572 Sarıgöl-Manisa Şubesi", 
+        "590 Alaçatı Çeşme-İzmir Şubesi", "615 Bornova-İzmir Şubesi", "622 Saruhanlı-Manisa Şubesi", "678 Eşrefpaşa-İzmir Şubesi", 
+        "711 Buca-İzmir Şubesi", "712 Alsancak-İzmir Şubesi", "714 Aliağa-İzmir Şubesi", "726 Narlıdere-İzmir Şubesi", 
+        "730 Ahmetli-Manisa Şubesi", "735 Gölmarmara-Manisa Şubesi", "776 Konak-İzmir Şubesi", "791 Menderes-İzmir Şubesi", 
+        "800 Çiğli-İzmir Şubesi", "803 Bayraklı-İzmir Şubesi", "804 Hatay-İzmir Şubesi", "807 Göztepe-İzmir Şubesi", 
+        "808 Balçova-İzmir Şubesi", "812 Karabağlar-İzmir Şubesi", "814 Üçyol-İzmir Şubesi", "869 Köprübaşı-Manisa Şubesi", 
+        "884 26 Ağustos-İzmir Şubesi", "902 Şirinyer-İzmir Şubesi", "904 Şemikler-İzmir Şubesi", "911 Altındağ-İzmir Şubesi", 
+        "928 Gümüşpala-İzmir Şubesi", "934 Denizbostanlı-İzmir Şubesi", "974 Gümüldür Menderes-İzmir Şubesi", 
+        "975 MTK Çarşı-İzmir Şubesi", "999 Çamdibi-İzmir Şubesi", "1000 Gaziemir-İzmir Şubesi", "1021 Beydağ-İzmir Şubesi", 
+        "1043 Yeşilyurt-İzmir Şubesi", "1089 Alaybey-İzmir Şubesi", "1203 Üçkuyular-İzmir Şubesi", "1204 Kahramanlar-İzmir Şubesi", 
+        "1256 Mesir-Manisa Şubesi", "1333 Efes-İzmir Şubesi", "1403 Kazımdirik-İzmir Şubesi", "1446 Ege Tıp-İzmir Şubesi", 
+        "1506 9 Eylül Üniversitesi-İzmir Şubesi", "1533 Fahrettin Altay-İzmir Şubesi", "1625 Güzelbahçe-İzmir Şubesi", 
+        "1743 Işıkkent-İzmir Şubesi", "1750 İzmir Para Grup Merkezi", "1751 İzmir Kurumsal Şube", "1768 Atatürk OSB-İzmir Ticari Şube", 
+        "1778 Yeni Gıda Çarşısı-İzmir Şubesi", "1815 İzmir Bölge Yöneticiliği-Konak", "1816 İzmir Bölge Yöneticiliği-Karşıyaka", 
+        "1840 Manisa Bölge Yöneticiliği", "1903 Girne Bulvarı-İzmir Şubesi", "1938 Manisa Ticari Şube", "1958 Karabağlar-İzmir Ticari Şube", 
+        "1961 Bozyaka-İzmir Şubesi", "1972 Ayrancılar-İzmir Şubesi", "1984 Manavkuyu-İzmir Şubesi", "1987 Yenişakran Aliağa-İzmir Şubesi", 
+        "1992 Gediz Mahallesi-İzmir Şubesi", "1993 Yıkıkkemer-İzmir Şubesi", "2081 Yeni Girne-İzmir Şubesi", "2088 Şehitler-Manisa Şubesi", 
+        "2129 Atakent-İzmir Şubesi", "2137 Osmangazi Bayraklı-İzmir Şubesi", "2152 Ataşehir-İzmir Şubesi", "2159 İzmir Caddesi-Manisa Şubesi", 
+        "2170 Hasan Tahsin Buca-İzmir Şubesi", "2267 Kemalpaşa-İzmir Ticari Şube", "2319 Cumhuriyet Salihli-Manisa Şubesi", 
+        "2335 Bornova Ata-İzmir Şubesi", "2408 Şehzadeler-Manisa Şubesi", "2425 Seydiköy Gaziemir-İzmir Şubesi", 
+        "2436 Menderes Caddesi-İzmir Şubesi", "2474 Çağlak Akhisar-Manisa Şubesi", "2477 Ulukent Menemen-İzmir Şubesi", 
+        "2494 4. Sanayi Sitesi-İzmir Şubesi", "2496 Ulus Meydanı Ödemiş-İzmir Şubesi", "2504 7 Eylül Turgutlu-Manisa Şubesi", 
+        "2514 Çandarlı Dikili-İzmir Şubesi", "2515 1. Sanayi-İzmir Şubesi", "2566 Ertuğrul Mahallesi Torbalı-İzmir Şubesi", 
+        "2630 Yeşilova Bornova-İzmir Şubesi", "2642 Yunusemre-Manisa Şubesi", "2673 Bakırçay Bergama-İzmir Şubesi", 
+        "2697 Atatürk Hastanesi-İzmir Şubesi"
     ];
-    const staticEnvanterler = ["Cüzdan yazıcı","Pc","Tarayıcı","Monitör","Ip telefon","Switch","Router","Sunucu","Nvr","Laptop","Lazer yazıcı","Kamera"];
-    
-    // DİNAMİK LİSTELER
     let dynamicSubeler = [];
-    let dynamicEnvanterler = [];
     
-    // BİRLEŞTİRİLMİŞ EŞSİZ (TEKİL) LİSTELER
-    function getUniqueSubeler() {
-        let all = [];
-        staticSubeler.forEach(s => all.push({ad: s, isStatic: true}));
-        dynamicSubeler.forEach(s => {
-            if(!staticSubeler.includes(s.val)) all.push({ad: s.val, key: s.key, isStatic: false});
-        });
-        return all;
-    }
-
-    function getUniqueEnvanterler() {
-        let all = [];
-        staticEnvanterler.forEach(s => all.push({ad: s, isStatic: true}));
-        dynamicEnvanterler.forEach(s => {
-            if(!staticEnvanterler.includes(s.val)) all.push({ad: s.val, key: s.key, isStatic: false});
-        });
-        return all;
-    }
-    
-    // ACTION SHEET DEĞİŞKENLERİ
-    let asRef = ""; let asType = ""; let asData = null;
-
-    function openAS(title, refPath, type, data) {
-        document.getElementById('as-title').innerText = title;
-        asRef = refPath; asType = type; asData = data;
-        document.getElementById('action-sheet').style.display = 'flex';
-        if ("vibrate" in navigator) navigator.vibrate(50);
-    }
-    function closeAS() { document.getElementById('action-sheet').style.display = 'none'; }
-    
-    function asDelete() {
-        if(confirm("Kalıcı olarak silinecek. Emin misiniz?")) {
-            db.ref(asRef).remove();
-            closeAS();
-            if(asType === 'sube' && document.getElementById('target-sube').value === asData.ad) {
-                document.getElementById('target-sube').value = "";
-            }
-        }
-    }
-    function asEdit() {
-        closeAS();
-        setTimeout(() => {
-            if(asType === 'sube') {
-                const yeni = prompt("Şube adını düzenle:", asData.ad);
-                if(yeni && yeni.trim() !== "") db.ref(asRef).set(yeni.trim());
-            } else if(asType === 'envanter') {
-                const yeni = prompt("Envanter adını düzenle:", asData.ad);
-                if(yeni && yeni.trim() !== "") db.ref(asRef).set(yeni.trim());
-            } else if(asType === 'depo') {
-                const yUrun = prompt("Ürün Adı:", asData.urun) || asData.urun;
-                const yBarkod = prompt("Barkod:", asData.barkod) || asData.barkod;
-                if(yUrun && yBarkod) db.ref(asRef).update({urun: yUrun, barkod: yBarkod});
-            }
-        }, 300);
-    }
-
     window.onload = function() {
         const savedMail = localStorage.getItem('s016_mail');
         const savedPass = localStorage.getItem('s016_pass');
@@ -304,11 +247,17 @@
 
     function startScannerEx(targetInputId) {
         document.getElementById('camera-modal').style.display = 'flex';
+        
         try {
             html5QrcodeScannerEx = new Html5Qrcode("reader");
+
             html5QrcodeScannerEx.start(
                 { facingMode: "environment" },
-                { fps: 20, qrbox: { width: 300, height: 100 }, experimentalFeatures: { useBarCodeDetectorIfSupported: true } },
+                { 
+                    fps: 20, 
+                    qrbox: { width: 300, height: 100 },
+                    experimentalFeatures: { useBarCodeDetectorIfSupported: true } 
+                },
                 (decodedText) => {
                     const input = document.getElementById(targetInputId);
                     if(input) {
@@ -322,25 +271,39 @@
                 }
             ).catch(err => { 
                 console.error("Kamera açılamadı:", err);
-                alert("Kamera başlatılamadı! Lütfen izinlerinizi kontrol edin.");
+                alert("Kamera başlatılamadı! Lütfen tarayıcı izinlerinizi kontrol edin.");
                 stopScannerEx(); 
             });
-        } catch (e) { stopScannerEx(); }
+        } catch (e) {
+            console.error("Barkod kütüphanesi hatası:", e);
+            alert("Barkod okuyucu yüklenirken bir hata oluştu.");
+            stopScannerEx();
+        }
     }
 
     function stopScannerEx() {
         if(html5QrcodeScannerEx) {
             html5QrcodeScannerEx.stop().then(() => {
-                html5QrcodeScannerEx = null; document.getElementById('camera-modal').style.display = 'none';
-            }).catch(() => { html5QrcodeScannerEx = null; document.getElementById('camera-modal').style.display = 'none'; });
-        } else { document.getElementById('camera-modal').style.display = 'none'; }
+                html5QrcodeScannerEx = null;
+                document.getElementById('camera-modal').style.display = 'none';
+            }).catch(() => {
+                html5QrcodeScannerEx = null;
+                document.getElementById('camera-modal').style.display = 'none';
+            });
+        } else {
+            document.getElementById('camera-modal').style.display = 'none';
+        }
     }
 
     function formatKP(text) {
         if(!text) return "";
         let parts = text.split(' ');
         if(/^\d+$/.test(parts[0])) {
-            return parts.slice(1).join(' ').replace(/-İzmir Şubesi/gi, '').replace(/-Manisa Şubesi/gi, '').replace(/Şubesi/gi, '').trim();
+            return parts.slice(1).join(' ')
+                        .replace(/-İzmir Şubesi/gi, '')
+                        .replace(/-Manisa Şubesi/gi, '')
+                        .replace(/Şubesi/gi, '')
+                        .trim();
         }
         return text; 
     }
@@ -351,8 +314,13 @@
         const isRem = document.getElementById('rem-check').checked;
 
         firebase.auth().signInWithEmailAndPassword(e, p).then(u => {
-            if(isRem) { localStorage.setItem('s016_mail', e); localStorage.setItem('s016_pass', p); } 
-            else { localStorage.removeItem('s016_mail'); localStorage.removeItem('s016_pass'); }
+            if(isRem) {
+                localStorage.setItem('s016_mail', e);
+                localStorage.setItem('s016_pass', p);
+            } else {
+                localStorage.removeItem('s016_mail');
+                localStorage.removeItem('s016_pass');
+            }
 
             uMail = e;
             const info = aracMap[e] || { ad: e.split('@')[0].toUpperCase(), kod: e.split('@')[0] };
@@ -360,6 +328,7 @@
             
             let displayUser = uName;
             
+            // KONTROLÖR YETKİLERİ KISITLAMASI
             if(uMail === "ekaradeniz@ziraatbank.com.tr") {
                 displayUser = `<span style="color:#d32f2f; font-size:10px;">KONTROLÖR:</span> ` + uName;
                 document.getElementById('btnSave').style.display = "none";
@@ -369,73 +338,96 @@
                 document.getElementById('btnAddRow').style.display = "block";
             }
             
-            document.getElementById('userTag').innerHTML = `${displayUser} <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>`;
+            document.getElementById('userTag').innerHTML = `
+                ${displayUser} 
+                <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>
+            `;
+
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('items-container').innerHTML = "";
             
-            addRowEx("ÇIKIŞ"); addRowEx("GİRİŞ");
+            addRowEx("ÇIKIŞ"); 
+            addRowEx("GİRİŞ");
             init();
         }).catch(() => alert("Giriş Hatalı!"));
     }
 
     function logout() {
         if(confirm("Oturumu kapatmak istediğinize emin misiniz?")) {
-            firebase.auth().signOut().then(() => location.reload());
+            firebase.auth().signOut().then(() => {
+                location.reload();
+            });
         }
     }
 
     function init() {
-        // Envanterleri Dinle
-        db.ref('ayarlar/urun_listesi').on('value', snap => { 
-            let list = [];
-            snap.forEach(i => list.push({key: i.key, val: i.val()}));
-            dynamicEnvanterler = list;
-            updateAllSelects();
-            if(document.getElementById('envanter-modal').style.display === 'block') renderEnvanterList();
-        });
+        // Envanter listesini format fark etmeksizin doğru okuma
+        db.ref('ayarlar/urun_listesi').on('value', snap => { updateAllSelects(); });
         
-        // Şubeleri Dinle
+        // Şube listesini format fark etmeksizin doğru okuma
         db.ref('ayarlar/sube_listesi').on('value', snap => {
             let list = []; 
             snap.forEach(i => {
-                const val = i.val();
-                list.push({key: i.key, val: typeof val === 'string' ? val : (val.ad || JSON.stringify(val))});
+                let val = i.val();
+                let ad = typeof val === 'string' ? val : val.ad;
+                if(ad) list.push(ad);
             });
-            dynamicSubeler = list; updateSubeCounter();
-            if(document.getElementById('sube-modal').style.display === 'block') filterSubeler(); 
+            dynamicSubeler = list; 
+            updateSubeCounter();
+            
+            if(document.getElementById('sube-modal').style.display === 'block'){
+                filterSubeler(); 
+            }
         });
 
         db.ref('transferler/canli_akis').on('value', snap => {
             const container = document.getElementById('akis-container');
             if(!container) return;
             
-            const groupedData = {}; const groupOrder = [];
+            const groupedData = {};
+            const groupOrder = [];
             
             snap.forEach(i => {
-                const d = i.val(); const key = i.key;
-                const tarih = d.tarih || ""; const saat = d.saat || "";
+                const d = i.val();
+                const key = i.key;
+                
+                const tarih = d.tarih || "";
+                const saat = d.saat || "";
                 const groupKey = d.yer + "|||" + tarih + "|||" + saat;
                 
-                if(!groupedData[groupKey]) groupedData[groupKey] = [];
+                if(!groupedData[groupKey]) {
+                    groupedData[groupKey] = [];
+                }
+                
                 groupedData[groupKey].unshift({ key, d });
+
                 const idx = groupOrder.indexOf(groupKey);
-                if(idx > -1) groupOrder.splice(idx, 1);
+                if(idx > -1) {
+                    groupOrder.splice(idx, 1);
+                }
                 groupOrder.unshift(groupKey);
             });
 
             currentAkisData = groupedData;
+
             let fullHtml = "";
 
             groupOrder.forEach(gKey => {
                 const parts = gKey.split("|||");
-                const yer = parts[0]; const tarih = parts[1]; const saat = parts[2];
+                const yer = parts[0];
+                const tarih = parts[1];
+                const saat = parts[2];
+
                 const gonderenIsmi = groupedData[gKey][0].d.gonderen || "Bilinmiyor";
 
                 let rowsHtml = "";
                 groupedData[gKey].forEach(item => {
-                    const key = item.key; const d = item.d;
-                    const isD = d.status === "YAPILDI"; const isOnay = d.status === "ONAY BEKLIYOR";
-                    const isReceiver = d.yer === uFullKey; const isPassiveKP = (d.tip === "ÇIKIŞ" || d.tip === "VER");
+                    const key = item.key;
+                    const d = item.d;
+                    const isD = d.status === "YAPILDI";
+                    const isOnay = d.status === "ONAY BEKLIYOR";
+                    const isReceiver = d.yer === uFullKey;
+                    const isPassiveKP = (d.tip === "ÇIKIŞ" || d.tip === "VER");
 
                     let actionHtml = "";
                     if(isOnay) {
@@ -446,9 +438,16 @@
                         actionHtml = `<button class="btn-status ${isD?'bg-done':'bg-waiting'}" onclick="db.ref('transferler/canli_akis/${key}').update({status:('${d.status}'==='BEKLEMEDE'?'YAPILDI':'BEKLEMEDE')})">${isD?'YAPILDI':'BEKLİYOR'}</button>`;
                     }
 
-                    let kpCell = isPassiveKP 
-                        ? `<input type="text" class="kp-input-large" readonly style="background:#f5f5f5; border:none; color:#777;" value="${d.kp||''}">`
-                        : `<div class="kp-wrapper"><input type="text" id="kp-${key}" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})" value="${d.kp||''}"><span class="magnifier-btn" onclick="startScannerEx('kp-${key}')">🔍</span></div>`;
+                    let kpCell = "";
+                    if(isPassiveKP) {
+                        kpCell = `<input type="text" class="kp-input-large" readonly style="background:#f5f5f5; border:none; color:#777;" value="${d.kp||''}">`;
+                    } else {
+                        kpCell = `
+                            <div class="kp-wrapper">
+                                <input type="text" id="kp-${key}" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})" value="${d.kp||''}">
+                                <span class="magnifier-btn" onclick="startScannerEx('kp-${key}')">🔍</span>
+                            </div>`;
+                    }
 
                     const checkMark = isD ? ' <span style="font-size:12px;">✅</span>' : '';
 
@@ -476,12 +475,27 @@
                             <button class="btn-circle" onclick="openAkisMenu(event, '${gKey}')">⋮</button>
                         </div>
                     </div>
-                    <table class="excel-table"><thead><tr><th style="width:30%;">Ürün-Barkod</th><th style="width:20%;">Personel</th><th style="width:25%;">KP NO</th><th style="width:25%;">Transfer</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+                    <table class="excel-table">
+                        <thead>
+                            <tr>
+                                <th style="width:30%;">Ürün-Barkod</th>
+                                <th style="width:20%;">Personel</th>
+                                <th style="width:25%;">KP NO</th>
+                                <th style="width:25%;">Transfer</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
                 </div>`;
             });
             
             container.innerHTML = fullHtml;
-            if(document.getElementById('akis-ara') && document.getElementById('akis-ara').value !== '') filterAkis();
+            
+            if(document.getElementById('akis-ara') && document.getElementById('akis-ara').value !== '') {
+                filterAkis();
+            }
         });
 
         db.ref('depolar').on('value', snap => {
@@ -489,81 +503,29 @@
             snap.forEach(d => {
                 let rws = ""; 
                 d.forEach(r => { 
-                    const v = r.val(); const rKey = r.key;
-                    rws += `<tr class="depo-item-row" data-ref="depolar/${d.key}/${rKey}" data-urun="${v.urun}" data-barkod="${v.barkod}">
+                    const v = r.val(); 
+                    rws += `<tr>
                         <td style="font-weight:bold; color:#444;">${v.urun}</td>
-                        <td style="color:#666; display:flex; justify-content:space-between;">${v.barkod} <span style="color:#bbb;">⋮</span></td>
+                        <td style="color:#666;">${v.barkod}</td>
                     </tr>`; 
                 });
                 c.innerHTML += `
                 <div class="depo-card">
-                    <div style="background:linear-gradient(135deg, #217346, #165230); color:white; padding:12px 15px; font-weight:bold; font-size:13px; text-align:left;">📦 ${d.key} Araç Deposu</div>
+                    <div style="background:linear-gradient(135deg, #217346, #165230); color:white; padding:12px 15px; font-weight:bold; font-size:13px;">📦 ${d.key} Araç Deposu</div>
                     <table class="excel-table">${rws}</table>
                 </div>`;
             });
         });
+        updateSubeCounter();
     }
 
-    let depoPressTimer, depoDragging = false, depoLongPressed = false;
-    document.getElementById('p-depo').addEventListener('touchstart', e => {
-        const tr = e.target.closest('.depo-item-row');
-        if(!tr) return;
-        depoDragging = false; depoLongPressed = false;
-        depoPressTimer = setTimeout(() => {
-            if(!depoDragging) {
-                depoLongPressed = true;
-                openAS(tr.getAttribute('data-urun'), tr.getAttribute('data-ref'), 'depo', {urun: tr.getAttribute('data-urun'), barkod: tr.getAttribute('data-barkod')});
-            }
-        }, 600);
-    });
-    document.getElementById('p-depo').addEventListener('touchmove', () => { depoDragging = true; clearTimeout(depoPressTimer); });
-    document.getElementById('p-depo').addEventListener('touchend', () => clearTimeout(depoPressTimer));
-    document.getElementById('p-depo').addEventListener('contextmenu', e => {
-        const tr = e.target.closest('.depo-item-row'); if(!tr) return; e.preventDefault();
-        openAS(tr.getAttribute('data-urun'), tr.getAttribute('data-ref'), 'depo', {urun: tr.getAttribute('data-urun'), barkod: tr.getAttribute('data-barkod')});
-    });
-
-    let subePressTimer, subeDragging = false, subeLongPressed = false;
-    document.getElementById('modal-list-body').addEventListener('touchstart', e => {
-        const item = e.target.closest('.dynamic-sube'); if(!item) return;
-        subeDragging = false; subeLongPressed = false;
-        subePressTimer = setTimeout(() => {
-            if(!subeDragging && item.getAttribute('data-ref')) {
-                subeLongPressed = true;
-                openAS(item.getAttribute('data-ad'), item.getAttribute('data-ref'), 'sube', {ad: item.getAttribute('data-ad')});
-            }
-        }, 600);
-    });
-    document.getElementById('modal-list-body').addEventListener('touchmove', () => { subeDragging = true; clearTimeout(subePressTimer); });
-    document.getElementById('modal-list-body').addEventListener('touchend', () => clearTimeout(subePressTimer));
-    document.getElementById('modal-list-body').addEventListener('contextmenu', e => {
-        const item = e.target.closest('.dynamic-sube'); if(!item) return; e.preventDefault();
-        if(item.getAttribute('data-ref')) openAS(item.getAttribute('data-ad'), item.getAttribute('data-ref'), 'sube', {ad: item.getAttribute('data-ad')});
-    });
-
-    let envPressTimer, envDragging = false, envLongPressed = false;
-    document.getElementById('envanter-list-body').addEventListener('touchstart', e => {
-        const item = e.target.closest('.dynamic-sube'); if(!item) return;
-        envDragging = false; envLongPressed = false;
-        envPressTimer = setTimeout(() => {
-            if(!envDragging && item.getAttribute('data-ref')) {
-                envLongPressed = true;
-                openAS(item.getAttribute('data-ad'), item.getAttribute('data-ref'), 'envanter', {ad: item.getAttribute('data-ad')});
-            }
-        }, 600);
-    });
-    document.getElementById('envanter-list-body').addEventListener('touchmove', () => { envDragging = true; clearTimeout(envPressTimer); });
-    document.getElementById('envanter-list-body').addEventListener('touchend', () => clearTimeout(envPressTimer));
-    document.getElementById('envanter-list-body').addEventListener('contextmenu', e => {
-        const item = e.target.closest('.dynamic-sube'); if(!item) return; e.preventDefault();
-        if(item.getAttribute('data-ref')) openAS(item.getAttribute('data-ad'), item.getAttribute('data-ref'), 'envanter', {ad: item.getAttribute('data-ad')});
-    });
-
     function openAkisMenu(e, gKey) {
-        e.stopPropagation(); selectedAkisGKey = gKey;
-        const groupData = currentAkisData[gKey]; if(!groupData || groupData.length === 0) return;
+        e.stopPropagation();
+        selectedAkisGKey = gKey;
         
-        // Eski kayıtlarda gonderen_kod yoksa yedek olarak kendi kodumuzu varsayıyoruz
+        const groupData = currentAkisData[gKey];
+        if(!groupData || groupData.length === 0) return;
+        
         const creatorKod = groupData[0].d.gonderen_kod || uFullKey; 
         const delBtn = document.getElementById('btnDeleteGroup');
         
@@ -575,53 +537,99 @@
 
         const menu = document.getElementById('akis-context-menu');
         menu.style.display = 'flex';
-        menu.style.left = (e.pageX - 170) + 'px';
-        menu.style.top = (e.pageY + 15) + 'px';
+        
+        const x = e.pageX - 170; 
+        const y = e.pageY + 15;
+        
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+        
         if ("vibrate" in navigator) navigator.vibrate(50);
 
-        setTimeout(() => { document.addEventListener('click', function closeMenu(ev) { if (!ev.target.closest('#akis-context-menu')) { menu.style.display = 'none'; document.removeEventListener('click', closeMenu); } }); }, 10);
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu(ev) {
+                if (!ev.target.closest('#akis-context-menu')) {
+                    menu.style.display = 'none';
+                    document.removeEventListener('click', closeMenu);
+                }
+            });
+        }, 10);
     }
 
     async function sendAkisMail() {
         document.getElementById('akis-context-menu').style.display = 'none';
         if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
+
         const groupData = currentAkisData[selectedAkisGKey];
-        let takilanlar = []; let alinanlar = [];
-        let persIsmi = groupData[0].d.personel || ""; if (persIsmi === "-") persIsmi = "";
+        
+        let takilanlar = [];
+        let alinanlar = [];
+        let persIsmi = groupData[0].d.personel || "";
+        if (persIsmi === "-") persIsmi = "";
+
         groupData.forEach(item => {
-            if(item.d.tip === "ÇIKIŞ" || item.d.tip === "VER") takilanlar.push(item.d.barkod || item.d.urun);
-            if(item.d.tip === "GİRİŞ" || item.d.tip === "AL") alinanlar.push(item.d.barkod || item.d.urun);
+            if(item.d.tip === "ÇIKIŞ" || item.d.tip === "VER") {
+                takilanlar.push(item.d.barkod || item.d.urun);
+            }
+            if(item.d.tip === "GİRİŞ" || item.d.tip === "AL") {
+                alinanlar.push(item.d.barkod || item.d.urun);
+            }
         });
 
         const bodyText = `Sayın Yetkili,\n\nArızalı olan cihazın değişimi gerçekleştirilmiş olup, envanter bilgileri aşağıda yer almaktadır.\n\nTakılan: ${takilanlar.join(', ')}\nArızalı : ${alinanlar.join(', ')}\n\nBilgilerinize,\nİyi çalışmalar.`;
-        try { await navigator.clipboard.writeText(bodyText); alert("✅ İçerik panoya kopyalandı!\nE-posta uygulamanız açılıyor..."); } 
-        catch (err) { alert("Metin panoya otomatik kopyalanamadı. Lütfen manuel olarak kopyalayın.\n\n" + bodyText); }
+
+        try {
+            await navigator.clipboard.writeText(bodyText);
+            alert("✅ İçerik panoya kopyalandı!\nE-posta uygulamanız açılıyor...");
+        } catch (err) {
+            console.error("Panoya kopyalanamadı:", err);
+            alert("Metin panoya otomatik kopyalanamadı. Lütfen manuel olarak kopyalayın.\n\n" + bodyText);
+        }
 
         const to = "btsahaoperasyonlariyonetimiyetkili@ziraatbank.com.tr";
-        let ccText = "btizmirsahabakim@ziraatbank.com.tr"; if (persIsmi !== "") ccText += ";" + persIsmi;
-        window.location.href = "mailto:" + to + "?cc=" + encodeURIComponent(ccText) + "&subject=" + encodeURIComponent("Envanter Transferi S016 Hk.");
+        const subject = "Envanter Transferi S016 Hk.";
+        
+        let ccText = "btizmirsahabakim@ziraatbank.com.tr";
+        if (persIsmi !== "") {
+            ccText += ";" + persIsmi;
+        }
+
+        const mailtoLink = "mailto:" + to + "?cc=" + encodeURIComponent(ccText) + "&subject=" + encodeURIComponent(subject);
+        
+        window.location.href = mailtoLink;
     }
 
     function deleteAkisGroup() {
         document.getElementById('akis-context-menu').style.display = 'none';
         if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
-        if(uMail === "ekaradeniz@ziraatbank.com.tr") return alert("Kayıt silme yetkiniz bulunmamaktadır!");
 
+        const groupData = currentAkisData[selectedAkisGKey];
+        const creatorKod = groupData[0].d.gonderen_kod || uFullKey;
+        
+        if(uMail === "ekaradeniz@ziraatbank.com.tr") return alert("Kayıt silme yetkiniz bulunmamaktadır!");
+        
         if(confirm("Bu gruba ait tüm işlemleri kalıcı olarak silmek istediğinize emin misiniz?")) {
-            currentAkisData[selectedAkisGKey].forEach(item => { db.ref('transferler/canli_akis/' + item.key).remove(); });
+            groupData.forEach(item => {
+                db.ref('transferler/canli_akis/' + item.key).remove();
+            });
         }
     }
 
     function addRowEx(type = "ÇIKIŞ") {
         const rowId = 'brk-' + Math.random().toString(36).substr(2, 9);
-        const div = document.createElement('div'); div.className = "excel-row-container";
+        const div = document.createElement('div'); 
+        div.className = "excel-row-container";
         div.innerHTML = `
             <select class="type-select ${type==='ÇIKIŞ'?'bg-out':'bg-in'}" onchange="this.classList.toggle('bg-out', this.value==='ÇIKIŞ'); this.classList.toggle('bg-in', this.value==='GİRİŞ')">
                 <option value="ÇIKIŞ" ${type==='ÇIKIŞ'?'selected':''}>Takılan</option>
                 <option value="GİRİŞ" ${type==='GİRİŞ'?'selected':''}>Arızalı</option>
             </select>
-            <div class="scan-container"><input type="number" id="${rowId}" placeholder="Barkod..." class="barkod-input"><span class="magnifier-btn" onclick="startScannerEx('${rowId}')">🔍</span></div>
-            <select class="urun-select"></select>`;
+            <div class="scan-container">
+                <input type="number" id="${rowId}" placeholder="Barkod..." class="barkod-input">
+                <span class="magnifier-btn" onclick="startScannerEx('${rowId}')">🔍</span>
+            </div>
+            <select class="urun-select" onchange="checkNewUrun(this)"></select>`;
+            
         document.getElementById('items-container').appendChild(div);
         updateAllSelects();
     }
@@ -631,9 +639,20 @@
         if(isAddingSube) return;
         const n = prompt("Yeni Şube/Lokasyon İsmi?"); 
         if(n && n.trim() !== "") {
+            const trimmed = n.trim();
+            const upper = trimmed.toLocaleUpperCase('tr-TR');
+            const allSubeler = [...staticSubeler, ...dynamicSubeler];
+            
+            // Çift kayıt koruması
+            if(allSubeler.some(s => s.toLocaleUpperCase('tr-TR') === upper)) {
+                alert("Bu şube zaten listede mevcut!");
+                return;
+            }
+
             isAddingSube = true;
-            db.ref('ayarlar/sube_listesi').push(n.trim()).then(() => {
-                isAddingSube = false; document.getElementById('sube-ara').value = n.trim();
+            db.ref('ayarlar/sube_listesi').push(trimmed).then(() => {
+                document.getElementById('sube-ara').value = trimmed;
+                isAddingSube = false;
             }).catch(() => { isAddingSube = false; });
         } 
     }
@@ -641,34 +660,36 @@
     function openModal() { document.getElementById('sube-modal').style.display = 'block'; filterSubeler(); }
     function closeModal() { document.getElementById('sube-modal').style.display = 'none'; }
     
-    function openEnvanterModal() { document.getElementById('envanter-modal').style.display = 'block'; renderEnvanterList(); }
-    function closeEnvanterModal() { document.getElementById('envanter-modal').style.display = 'none'; }
-    
     let isAddingEnv = false;
-    function manualEnvanterAdd() {
-        if(isAddingEnv) return;
-        const n = prompt("Yeni Envanter Adı?");
-        if(n && n.trim() !== "") {
-            isAddingEnv = true;
-            db.ref('ayarlar/urun_listesi').push(n.trim()).then(() => { isAddingEnv = false; }).catch(() => { isAddingEnv = false; });
-        }
-    }
+    function checkNewUrun(sel) { 
+        if(sel.value === "ADD_NEW") { 
+            if(isAddingEnv) return;
+            const n = prompt("Yeni Envanter?"); 
+            if(n && n.trim() !== "") { 
+                const trimmed = n.trim();
+                const upper = trimmed.toLocaleUpperCase('tr-TR');
+                
+                // Seçeneklerdeki değerleri kontrol et, varsa tekrar ekleme
+                let exists = false;
+                Array.from(sel.options).forEach(opt => {
+                    if(opt.value !== "ADD_NEW" && opt.value.toLocaleUpperCase('tr-TR') === upper) exists = true;
+                });
 
-    function renderEnvanterList() {
-        const list = document.getElementById('envanter-list-body'); list.innerHTML = "";
-        const uList = getUniqueEnvanterler();
-        
-        uList.forEach(s => {
-            const d = document.createElement('div'); d.className = s.isStatic ? "sube-item" : "sube-item dynamic-sube"; 
-            if(!s.isStatic) d.setAttribute('data-ref', 'ayarlar/urun_listesi/' + s.key);
-            d.setAttribute('data-ad', s.ad);
-            d.innerHTML = s.isStatic 
-                ? `📦 <span style="flex:1;">${s.ad}</span>`
-                : `🟢 <span style="flex:1; font-weight:bold;">${s.ad}</span> <span style="color:#aaa; font-size:16px;">⋮</span>`; 
-            
-            d.onclick = (e) => { if(envLongPressed) e.preventDefault(); };
-            list.appendChild(d);
-        });
+                if(exists) {
+                    alert("Bu envanter zaten listede mevcut!");
+                    sel.value = Array.from(sel.options).find(o => o.value.toLocaleUpperCase('tr-TR') === upper).value;
+                    return;
+                }
+
+                isAddingEnv = true;
+                db.ref('ayarlar/urun_listesi').push(trimmed).then(() => {
+                    isAddingEnv = false;
+                    setTimeout(() => sel.value = trimmed, 500); 
+                }).catch(() => { isAddingEnv = false; sel.value = sel.options[1].value; });
+            } else {
+                sel.value = sel.options[1].value;
+            } 
+        } 
     }
 
     function approveTransfer(key) {
@@ -681,19 +702,29 @@
     }
 
     function updateAllSelects() {
-        document.querySelectorAll('.urun-select').forEach(sel => {
-            const old = sel.value;
-            let h = "";
-            const uList = getUniqueEnvanterler();
-            uList.forEach(u => h += `<option value="${u.ad}">${u.ad}</option>`);
-            sel.innerHTML = h;
+        db.ref('ayarlar/urun_listesi').once('value', snap => {
+            let list = ["Cüzdan yazıcı","Pc","Tarayıcı","Monitör","Ip telefon","Switch","Router","Sunucu","Nvr","Laptop","Lazer yazıcı","Kamera"];
             
-            let exists = uList.some(e => e.ad === old);
-            if(old && exists) {
-                sel.value = old;
-            } else if (uList.length > 0) {
-                sel.value = uList[0].ad; 
-            }
+            snap.forEach(i => { 
+                let val = i.val();
+                let ad = typeof val === 'string' ? val : val.ad;
+                if(ad && !list.includes(ad)) list.push(ad); 
+            });
+
+            document.querySelectorAll('.urun-select').forEach(sel => {
+                const old = sel.value;
+                
+                let h = `<option value="ADD_NEW" style="color:#217346; font-weight:bold;">➕ YENİ ENVANTER EKLE</option>`;
+                list.forEach(u => h += `<option value="${u}">${u}</option>`);
+                
+                sel.innerHTML = h;
+                
+                if(old && old !== "ADD_NEW" && list.includes(old)) {
+                    sel.value = old;
+                } else if (!old) {
+                    sel.value = list[0]; 
+                }
+            });
         });
     }
 
@@ -717,11 +748,21 @@
             const b = String(row.querySelector('.barkod-input').value).trim();
             const u = row.querySelector('.urun-select').value;
             const type = row.querySelector('.type-select').value;
+            
             if(b) {
                 const kpVal = (type === "ÇIKIŞ") ? kpFormatted : "";
                 const data = { 
-                    gonderen: uName, yer: target, personel: pers, tip: type, barkod: b, 
-                    urun: u, status: "BEKLEMEDE", kp: kpVal, tarih: tarih, saat: saat, gonderen_kod: uFullKey 
+                    gonderen: uName, 
+                    yer: target, 
+                    personel: pers,
+                    tip: type, 
+                    barkod: b, 
+                    urun: u, 
+                    status: "BEKLEMEDE", 
+                    kp: kpVal, 
+                    tarih: tarih,
+                    saat: saat, 
+                    gonderen_kod: uFullKey 
                 };
                 db.ref('transferler/canli_akis').push(data);
                 addedCount++;
@@ -731,7 +772,8 @@
         if (addedCount > 0) { 
             document.getElementById('items-container').innerHTML = ""; 
             document.getElementById('personel-name').value = "";
-            addRowEx("ÇIKIŞ"); addRowEx("GİRİŞ"); 
+            addRowEx("ÇIKIŞ"); 
+            addRowEx("GİRİŞ"); 
         }
         alert(addedCount > 0 ? "Başarıyla kaydedildi." : "Kaydedilecek veri yok.");
     }
@@ -740,25 +782,22 @@
         const ara = document.getElementById('sube-ara').value.toLocaleUpperCase('tr-TR');
         const list = document.getElementById('modal-list-body'); list.innerHTML = "";
         
-        const uList = getUniqueSubeler().filter(s => s.ad.toLocaleUpperCase('tr-TR').includes(ara));
+        // Tekrar edenleri temizleyerek birleştirme (Mükerrer isim filtresi)
+        const allUnique = [...new Set([...staticSubeler, ...dynamicSubeler])];
         
-        uList.forEach(s => {
-            const d = document.createElement('div'); d.className = s.isStatic ? "sube-item" : "sube-item dynamic-sube"; 
-            if(!s.isStatic) d.setAttribute('data-ref', 'ayarlar/sube_listesi/' + s.key);
-            d.setAttribute('data-ad', s.ad);
-            d.innerHTML = s.isStatic 
-                ? `🏢 <span style="flex:1;">${s.ad}</span>`
-                : `🟢 <span style="flex:1; font-weight:bold;">${s.ad}</span> <span style="color:#aaa; font-size:16px;">⋮</span>`; 
-            
-            d.onclick = (e) => { 
-                if(subeLongPressed) { e.preventDefault(); return; }
-                document.getElementById('target-sube').value = s.ad; closeModal(); 
-            };
+        allUnique.filter(s => s.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
+            const d = document.createElement('div'); d.className = "sube-item"; 
+            d.innerHTML = `🏢 <span style="flex:1;">${s}</span>`; 
+            d.onclick = () => { document.getElementById('target-sube').value = s; closeModal(); };
             list.appendChild(d);
         });
     }
-
-    function updateSubeCounter() { const total = getUniqueSubeler().length; document.getElementById('target-sube').placeholder = `📍 Hedef Lokasyon Seçin (${total})`; }
+    
+    function updateSubeCounter() { 
+        const allUnique = new Set([...staticSubeler, ...dynamicSubeler]);
+        document.getElementById('target-sube').placeholder = `📍 Hedef Lokasyon Seçin (${allUnique.size})`; 
+    }
+    
     function tabEx(id, el) { document.querySelectorAll('.app-page').forEach(p => p.style.display = 'none'); document.getElementById('p-'+id).style.display = 'block'; document.querySelectorAll('.excel-nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
 
     function filterAkis() {
@@ -767,15 +806,26 @@
 
         wrappers.forEach(wrapper => {
             const locationHeader = wrapper.querySelector('div').innerText.toLocaleUpperCase('tr-TR');
-            const rows = wrapper.querySelectorAll('tbody tr'); let hasVisibleRow = false;
+            const rows = wrapper.querySelectorAll('tbody tr');
+            let hasVisibleRow = false;
+
             const locationMatch = locationHeader.includes(ara);
 
             rows.forEach(row => {
                 const rowText = row.innerText.toLocaleUpperCase('tr-TR');
-                if (locationMatch || rowText.includes(ara)) { row.style.display = ''; hasVisibleRow = true; } else { row.style.display = 'none'; }
+                if (locationMatch || rowText.includes(ara)) {
+                    row.style.display = '';
+                    hasVisibleRow = true;
+                } else {
+                    row.style.display = 'none';
+                }
             });
 
-            if (hasVisibleRow || locationMatch) { wrapper.style.display = ''; } else { wrapper.style.display = 'none'; }
+            if (hasVisibleRow || locationMatch) {
+                wrapper.style.display = '';
+            } else {
+                wrapper.style.display = 'none';
+            }
         });
     }
 </script>
