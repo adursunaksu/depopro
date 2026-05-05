@@ -211,13 +211,10 @@
     let selectedAkisGKey = "";
     let currentUrunInputId = null;
 
+    // Sadece senin e-postaların kaldı, diğer tüm personeller temizlendi
     const aracMap = {
         "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
-        "ahmetdursunaksu@zbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
-        "dokocadag@ziraatbank.com.tr": { ad: "DOĞAÇ", kod: "s573 Doğaç" },
-        "taylansahin@ziraatbank.com.tr": { ad: "TAYLAN", kod: "s574 Taylan" },
-        "adincel@ziraatbank.com.tr": { ad: "ALİ RIZA", kod: "s569 Ali Rıza" },
-        "ahaksu@ziraatbank.com.tr": { ad: "HALUK", kod: "s528 Haluk" }
+        "ahmetdursunaksu@zbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" }
     };
 
     const staticSubeler = [
@@ -258,9 +255,8 @@
     
     let dynamicSubeler = [];
     let dynamicEnvanterler = [];
-    let uiIslemler = []; // Sabit listelerdeki silme ve düzenlemeleri aklında tutar
+    let uiIslemler = []; 
 
-    // YENİ: Gelişmiş "Basılı Tut" Algılayıcısı
     function addLongPressListener(element, onClick, onLongPress) {
         let pressTimer;
         let isLongPress = false;
@@ -276,12 +272,11 @@
             pressTimer = setTimeout(() => {
                 isLongPress = true;
                 if (onLongPress) onLongPress(e);
-            }, 600); // 0.6 saniye basılı tutma
+            }, 600); 
         };
 
         const cancel = (e) => {
             if (pressTimer) clearTimeout(pressTimer);
-            // Kaydırma (Scroll) yapılıyorsa basılı tutmayı iptal et
             if (e.type === 'touchmove') {
                 if (Math.abs(e.touches[0].clientX - startX) > 15 || Math.abs(e.touches[0].clientY - startY) > 15) {
                     clearTimeout(pressTimer);
@@ -304,7 +299,6 @@
         };
     }
 
-    // ACTION SHEET DEĞİŞKENLERİ
     let asType = ""; let asData = null;
 
     function openAS(title, type, data) {
@@ -319,10 +313,8 @@
     function asDelete() {
         if(confirm("Bu veriyi kalıcı olarak silmek istediğinize emin misiniz?")) {
             if (asData.isStatic) {
-                // Sabit listedeki bir öğeyi siliyoruz
                 db.ref('ayarlar/ui_islemler').push({ tip: 'sil', kategori: asType, isim: asData.originalName });
             } else {
-                // Sonradan eklenen dinamik öğeyi siliyoruz
                 db.ref('ayarlar/' + (asType==='sube' ? 'sube_listesi' : 'urun_listesi') + '/' + asData.key).remove();
             }
             
@@ -332,7 +324,7 @@
                 document.getElementById('target-sube').value = "";
             }
             if(asType === 'urun') {
-                updateAllSelects(); // Silinen ürünü formdan otomatik temizle
+                updateAllSelects(); 
             }
         }
     }
@@ -344,24 +336,19 @@
             if(yeni && yeni.trim() !== "" && yeni.trim() !== asData.ad) {
                 const yeniAd = yeni.trim();
                 if (asData.isStatic) {
-                    // Sabit listedeki öğeyi yeniden adlandırıyoruz
                     db.ref('ayarlar/ui_islemler').push({ tip: 'duzenle', kategori: asType, eski: asData.originalName, yeni: yeniAd });
                 } else {
-                    // Dinamik öğeyi güncelliyoruz
                     db.ref('ayarlar/' + (asType==='sube' ? 'sube_listesi' : 'urun_listesi') + '/' + asData.key).set(yeniAd);
                 }
             }
         }, 300);
     }
 
-    // Sabit, Dinamik, Düzenlenmiş ve Silinmiş verileri harmanlayan akıllı fonksiyon
     function getProcessedList(staticArray, dynamicArray, category) {
         let processed = new Map();
 
-        // 1. Sabitleri yükle
         staticArray.forEach(s => processed.set(s.toLocaleUpperCase('tr-TR'), { ad: s, isStatic: true, originalName: s }));
 
-        // 2. Kullanıcının Sabitler üzerindeki silme/düzenleme işlemlerini uygula
         const ops = uiIslemler.filter(op => op.kategori === category);
         ops.forEach(op => {
             if (op.tip === 'sil') {
@@ -383,7 +370,6 @@
             }
         });
 
-        // 3. Dinamikleri ekle
         dynamicArray.forEach(d => {
             processed.set(d.ad.toLocaleUpperCase('tr-TR'), { ad: d.ad, key: d.key, isStatic: false });
         });
@@ -471,25 +457,16 @@
             const info = aracMap[e] || { ad: e.split('@')[0].toUpperCase(), kod: e.split('@')[0] };
             uName = info.ad; uFullKey = info.kod;
             
-            let displayUser = uName;
+            document.getElementById('btnSave').style.display = "block";
+            document.getElementById('btnAddRow').style.display = "block";
             
-            if(uMail === "ekaradeniz@ziraatbank.com.tr") {
-                displayUser = `<span style="color:#d32f2f; font-size:10px;">KONTROLÖR:</span> ` + uName;
-                document.getElementById('btnSave').style.display = "none";
-                document.getElementById('btnAddRow').style.display = "none"; 
-            } else {
-                document.getElementById('btnSave').style.display = "block";
-                document.getElementById('btnAddRow').style.display = "block";
-            }
-            
-            document.getElementById('userTag').innerHTML = `${displayUser} <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>`;
+            document.getElementById('userTag').innerHTML = `${uName} <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>`;
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('items-container').innerHTML = "";
             
             cleanDatabase(); 
             init();
             
-            // Verilerin ilk dolmasını bekleyip sonra satırları ekleyelim ki boş gelmesin
             setTimeout(() => {
                 addRowEx("ÇIKIŞ"); 
                 addRowEx("GİRİŞ");
@@ -656,10 +633,8 @@
         const groupData = currentAkisData[gKey];
         if(!groupData || groupData.length === 0) return;
         
-        const creatorKod = groupData[0].d.gonderen_kod || uFullKey; 
-        const delBtn = document.getElementById('btnDeleteGroup');
-        
-        if (uMail !== "ekaradeniz@ziraatbank.com.tr") { delBtn.style.display = 'flex'; } else { delBtn.style.display = 'none'; }
+        // Herkes silindiği için silme butonu her zaman açık
+        document.getElementById('btnDeleteGroup').style.display = 'flex'; 
 
         const menu = document.getElementById('akis-context-menu');
         menu.style.display = 'flex';
@@ -695,7 +670,6 @@
     function deleteAkisGroup() {
         document.getElementById('akis-context-menu').style.display = 'none';
         if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
-        if(uMail === "ekaradeniz@ziraatbank.com.tr") return alert("Kayıt silme yetkiniz bulunmamaktadır!");
         
         if(confirm("Bu gruba ait tüm işlemleri kalıcı olarak silmek istediğinize emin misiniz?")) {
             currentAkisData[selectedAkisGKey].forEach(item => { db.ref('transferler/canli_akis/' + item.key).remove(); });
@@ -923,4 +897,4 @@
     }
 </script>
 </body>
-    </html>
+</html>
