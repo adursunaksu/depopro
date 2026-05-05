@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v75.2</title>
+    <title>S016 Depo Takip v75.5 (Basılı Tut & Tam Yetki)</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -15,9 +15,9 @@
         .bg-out { background-color: #d9e9f3 !important; color: #0078d4 !important; font-weight: bold; } 
         
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; font-size: 12px; transition: background-color 0.2s, box-shadow 0.2s; }
-        body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none; -webkit-user-select: none; }
         
-        #sube-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:3000; padding:20px; backdrop-filter: blur(3px); }
+        #sube-modal, #envanter-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:3000; padding:20px; backdrop-filter: blur(3px); }
         .modal-box { background:white; border-radius:12px; height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .modal-search { padding:15px; border-bottom:1px solid #eee; background: #fafafa; }
         .modal-search input { width:100%; padding:14px; border:2px solid var(--excell-green); border-radius:8px; font-size:14px; outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
@@ -27,7 +27,7 @@
 
         .modal-list { flex:1; overflow-y:auto; background: #fff; }
         .sube-item { padding:15px 20px; border-bottom:1px solid #f5f5f5; font-size:13px; color: #444; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-        .sube-item:active { background: #e8f5e9; padding-left: 25px; font-weight: bold; color: var(--excell-green); }
+        .sube-item:active { background: #e8f5e9; padding-left: 25px; }
 
         .excel-bar { background: linear-gradient(135deg, #217346, #165230); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(33,115,70,0.4); z-index: 100; }
         .user-cell { background: rgba(255,255,255,0.9); color: #333; padding: 5px 12px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -54,9 +54,9 @@
 
         .excel-row-container { display: flex; background: #fff; margin-bottom: 8px; min-height: 50px; align-items: center; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; }
         .type-select { width: 85px; height: 50px; border: none; border-right: 1px solid #eee; font-weight: bold; text-align: center; outline: none; }
-        .urun-select { flex: 2; height: 50px; border: none; padding-left: 8px; font-weight: bold; outline: none; background: transparent; color: #333; }
+        .urun-input { flex: 1.5; height: 50px; border: none; border-left: 1px solid #eee; padding: 0 8px; font-weight: bold; outline: none; background: transparent; color: #333; cursor: pointer; text-align: center; font-size: 12px; }
         .scan-container { position: relative; display: flex; align-items: center; flex: 2; height: 50px; }
-        .barkod-input { width: 100%; height: 100%; border: none; border-right: 1px solid #eee; padding: 0 35px 0 12px; font-size: 13px; outline: none; background: #fafafa; }
+        .barkod-input { width: 100%; height: 100%; border: none; padding: 0 35px 0 12px; font-size: 13px; outline: none; background: #fafafa; }
         .barkod-input:focus { background: #fff; }
         
         .kp-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
@@ -94,6 +94,8 @@
         
         .akis-card { margin-bottom:15px; border-radius:10px; overflow:hidden; background:#fff; box-shadow: var(--shadow); border: 1px solid #eee; }
         .depo-card { margin-bottom:15px; border-radius:12px; overflow:hidden; background:white; box-shadow: var(--shadow); border: 1px solid #eee; }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -115,6 +117,15 @@
     <div class="context-menu-item" id="btnDeleteGroup" onclick="deleteAkisGroup()">🗑️ Grubu Sil</div>
 </div>
 
+<div id="action-sheet" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:6000; flex-direction:column; justify-content:flex-end; backdrop-filter: blur(2px);">
+    <div style="background:white; border-top-left-radius:20px; border-top-right-radius:20px; padding:25px 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;">
+        <h3 id="as-title" style="margin-top:0; margin-bottom: 20px; color:var(--excell-green); text-align:center; font-size:16px;">İşlem Seç</h3>
+        <button onclick="asEdit()" style="width:100%; padding:15px; margin-bottom:12px; background:#f5f5f5; color:#333; border:1px solid #ddd; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">✏️ Düzenle</button>
+        <button onclick="asDelete()" style="width:100%; padding:15px; margin-bottom:12px; background:#ffebee; color:#d32f2f; border:1px solid #ffcdd2; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">🗑️ Sil</button>
+        <button onclick="closeAS()" style="width:100%; padding:15px; background:#444; color:white; border:none; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">Vazgeç</button>
+    </div>
+</div>
+
 <div id="sube-modal">
     <div class="modal-box">
         <div class="modal-search"><input type="text" id="sube-ara" placeholder="Şube ara (Kod veya İsim)..." oninput="filterSubeler()"></div>
@@ -124,13 +135,22 @@
     </div>
 </div>
 
+<div id="envanter-modal">
+    <div class="modal-box">
+        <div class="modal-search"><input type="text" id="env-ara" placeholder="Ürün ara..." oninput="renderEnvanterList()"></div>
+        <div class="add-btn-list" onclick="manualEnvanterAdd()">➕ LİSTEDE OLMAYAN ÜRÜNÜ EKLE</div>
+        <div class="modal-list" id="envanter-list-body"></div>
+        <button onclick="closeEnvanterModal()" style="padding:16px; background:#444; color:white; border:none; font-weight:bold; font-size:14px; cursor:pointer;">VAZGEÇ</button>
+    </div>
+</div>
+
 <div id="camera-modal">
     <button id="camera-close-btn" onclick="stopScannerEx()">×</button>
     <div id="reader"></div>
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v75.2</div>
+    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v75.5</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -189,6 +209,7 @@
 
     let currentAkisData = {};
     let selectedAkisGKey = "";
+    let currentUrunInputId = null;
 
     const aracMap = {
         "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
@@ -233,8 +254,143 @@
         "2630 Yeşilova Bornova-İzmir Şubesi", "2642 Yunusemre-Manisa Şubesi", "2673 Bakırçay Bergama-İzmir Şubesi", 
         "2697 Atatürk Hastanesi-İzmir Şubesi"
     ];
-    let dynamicSubeler = [];
+    const staticProductsList = ["Cüzdan yazıcı","Pc","Tarayıcı","Monitör","Ip telefon","Switch","Router","Sunucu","Nvr","Laptop","Lazer yazıcı","Kamera"];
     
+    let dynamicSubeler = [];
+    let dynamicEnvanterler = [];
+    let uiIslemler = []; // Sabit listelerdeki silme ve düzenlemeleri aklında tutar
+
+    // YENİ: Gelişmiş "Basılı Tut" Algılayıcısı
+    function addLongPressListener(element, onClick, onLongPress) {
+        let pressTimer;
+        let isLongPress = false;
+        let startX = 0; let startY = 0;
+
+        const start = (e) => {
+            if (e.type === 'touchstart' && e.touches.length > 1) return;
+            isLongPress = false;
+            if (e.type === 'touchstart') {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            }
+            pressTimer = setTimeout(() => {
+                isLongPress = true;
+                if (onLongPress) onLongPress(e);
+            }, 600); // 0.6 saniye basılı tutma
+        };
+
+        const cancel = (e) => {
+            if (pressTimer) clearTimeout(pressTimer);
+            // Kaydırma (Scroll) yapılıyorsa basılı tutmayı iptal et
+            if (e.type === 'touchmove') {
+                if (Math.abs(e.touches[0].clientX - startX) > 15 || Math.abs(e.touches[0].clientY - startY) > 15) {
+                    clearTimeout(pressTimer);
+                }
+            }
+        };
+
+        element.addEventListener('touchstart', start, {passive: true});
+        element.addEventListener('touchend', cancel, {passive: true});
+        element.addEventListener('touchmove', cancel, {passive: true});
+        element.addEventListener('touchcancel', cancel, {passive: true});
+        
+        element.addEventListener('mousedown', start);
+        element.addEventListener('mouseup', cancel);
+        element.addEventListener('mouseleave', cancel);
+
+        element.onclick = (e) => {
+            if (isLongPress) { e.preventDefault(); e.stopPropagation(); return; }
+            if (onClick) onClick(e);
+        };
+    }
+
+    // ACTION SHEET DEĞİŞKENLERİ
+    let asType = ""; let asData = null;
+
+    function openAS(title, type, data) {
+        document.getElementById('as-title').innerText = title;
+        asType = type; asData = data;
+        document.getElementById('action-sheet').style.display = 'flex';
+        if ("vibrate" in navigator) navigator.vibrate(50);
+    }
+    
+    function closeAS() { document.getElementById('action-sheet').style.display = 'none'; }
+    
+    function asDelete() {
+        if(confirm("Bu veriyi kalıcı olarak silmek istediğinize emin misiniz?")) {
+            if (asData.isStatic) {
+                // Sabit listedeki bir öğeyi siliyoruz
+                db.ref('ayarlar/ui_islemler').push({ tip: 'sil', kategori: asType, isim: asData.originalName });
+            } else {
+                // Sonradan eklenen dinamik öğeyi siliyoruz
+                db.ref('ayarlar/' + (asType==='sube' ? 'sube_listesi' : 'urun_listesi') + '/' + asData.key).remove();
+            }
+            
+            closeAS();
+            
+            if(asType === 'sube' && document.getElementById('target-sube').value === asData.ad) {
+                document.getElementById('target-sube').value = "";
+            }
+            if(asType === 'urun') {
+                updateAllSelects(); // Silinen ürünü formdan otomatik temizle
+            }
+        }
+    }
+    
+    function asEdit() {
+        closeAS();
+        setTimeout(() => {
+            const yeni = prompt("Yeni ismi girin:", asData.ad);
+            if(yeni && yeni.trim() !== "" && yeni.trim() !== asData.ad) {
+                const yeniAd = yeni.trim();
+                if (asData.isStatic) {
+                    // Sabit listedeki öğeyi yeniden adlandırıyoruz
+                    db.ref('ayarlar/ui_islemler').push({ tip: 'duzenle', kategori: asType, eski: asData.originalName, yeni: yeniAd });
+                } else {
+                    // Dinamik öğeyi güncelliyoruz
+                    db.ref('ayarlar/' + (asType==='sube' ? 'sube_listesi' : 'urun_listesi') + '/' + asData.key).set(yeniAd);
+                }
+            }
+        }, 300);
+    }
+
+    // Sabit, Dinamik, Düzenlenmiş ve Silinmiş verileri harmanlayan akıllı fonksiyon
+    function getProcessedList(staticArray, dynamicArray, category) {
+        let processed = new Map();
+
+        // 1. Sabitleri yükle
+        staticArray.forEach(s => processed.set(s.toLocaleUpperCase('tr-TR'), { ad: s, isStatic: true, originalName: s }));
+
+        // 2. Kullanıcının Sabitler üzerindeki silme/düzenleme işlemlerini uygula
+        const ops = uiIslemler.filter(op => op.kategori === category);
+        ops.forEach(op => {
+            if (op.tip === 'sil') {
+                let targetKey = null;
+                for (let [k, v] of processed.entries()) {
+                    if (v.originalName === op.isim) { targetKey = k; break; }
+                }
+                if (targetKey) processed.delete(targetKey);
+            } else if (op.tip === 'duzenle') {
+                let targetKey = null; let targetItem = null;
+                for (let [k, v] of processed.entries()) {
+                    if (v.originalName === op.eski) { targetKey = k; targetItem = v; break; }
+                }
+                if (targetItem) {
+                    processed.delete(targetKey);
+                    targetItem.ad = op.yeni;
+                    processed.set(op.yeni.toLocaleUpperCase('tr-TR'), targetItem);
+                }
+            }
+        });
+
+        // 3. Dinamikleri ekle
+        dynamicArray.forEach(d => {
+            processed.set(d.ad.toLocaleUpperCase('tr-TR'), { ad: d.ad, key: d.key, isStatic: false });
+        });
+
+        return Array.from(processed.values());
+    }
+
     window.onload = function() {
         const savedMail = localStorage.getItem('s016_mail');
         const savedPass = localStorage.getItem('s016_pass');
@@ -247,17 +403,11 @@
 
     function startScannerEx(targetInputId) {
         document.getElementById('camera-modal').style.display = 'flex';
-        
         try {
             html5QrcodeScannerEx = new Html5Qrcode("reader");
-
             html5QrcodeScannerEx.start(
                 { facingMode: "environment" },
-                { 
-                    fps: 20, 
-                    qrbox: { width: 300, height: 100 },
-                    experimentalFeatures: { useBarCodeDetectorIfSupported: true } 
-                },
+                { fps: 20, qrbox: { width: 300, height: 100 }, experimentalFeatures: { useBarCodeDetectorIfSupported: true } },
                 (decodedText) => {
                     const input = document.getElementById(targetInputId);
                     if(input) {
@@ -275,7 +425,6 @@
                 stopScannerEx(); 
             });
         } catch (e) {
-            console.error("Barkod kütüphanesi hatası:", e);
             alert("Barkod okuyucu yüklenirken bir hata oluştu.");
             stopScannerEx();
         }
@@ -299,11 +448,7 @@
         if(!text) return "";
         let parts = text.split(' ');
         if(/^\d+$/.test(parts[0])) {
-            return parts.slice(1).join(' ')
-                        .replace(/-İzmir Şubesi/gi, '')
-                        .replace(/-Manisa Şubesi/gi, '')
-                        .replace(/Şubesi/gi, '')
-                        .trim();
+            return parts.slice(1).join(' ').replace(/-İzmir Şubesi/gi, '').replace(/-Manisa Şubesi/gi, '').replace(/Şubesi/gi, '').trim();
         }
         return text; 
     }
@@ -328,7 +473,6 @@
             
             let displayUser = uName;
             
-            // KONTROLÖR YETKİLERİ KISITLAMASI
             if(uMail === "ekaradeniz@ziraatbank.com.tr") {
                 displayUser = `<span style="color:#d32f2f; font-size:10px;">KONTROLÖR:</span> ` + uName;
                 document.getElementById('btnSave').style.display = "none";
@@ -338,151 +482,112 @@
                 document.getElementById('btnAddRow').style.display = "block";
             }
             
-            document.getElementById('userTag').innerHTML = `
-                ${displayUser} 
-                <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>
-            `;
-
+            document.getElementById('userTag').innerHTML = `${displayUser} <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>`;
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('items-container').innerHTML = "";
             
-            addRowEx("ÇIKIŞ"); 
-            addRowEx("GİRİŞ");
-            
-            cleanDatabase(); // VERİTABANI TEMİZLİĞİNİ BAŞLAT
+            cleanDatabase(); 
             init();
+            
+            // Verilerin ilk dolmasını bekleyip sonra satırları ekleyelim ki boş gelmesin
+            setTimeout(() => {
+                addRowEx("ÇIKIŞ"); 
+                addRowEx("GİRİŞ");
+            }, 600);
+            
         }).catch(() => alert("Giriş Hatalı!"));
     }
 
     function logout() {
         if(confirm("Oturumu kapatmak istediğinize emin misiniz?")) {
-            firebase.auth().signOut().then(() => {
-                location.reload();
-            });
+            firebase.auth().signOut().then(() => location.reload());
         }
     }
 
-    // YENİ: VERİTABANI KOPYA VE ÇÖP TEMİZLEYİCİ
     function cleanDatabase() {
-        // 1. Şube Listesi Temizliği
         db.ref('ayarlar/sube_listesi').once('value', snap => {
             let seenNames = new Set();
-            
-            // Sabit listedeki isimleri zaten var kabul edelim, tekrar Firebase'e kaydetmeye gerek yok.
             staticSubeler.forEach(s => seenNames.add(s.toLocaleUpperCase('tr-TR').trim()));
-            
             snap.forEach(child => {
                 let val = child.val();
                 let ad = typeof val === 'string' ? val : val.ad;
-                
-                if(ad) {
-                    let upper = ad.trim().toLocaleUpperCase('tr-TR');
-                    // Eğer bu şube zaten listede varsa (veya koda gömülü sabitlerde varsa), bu satırı DB'den sil
-                    if(seenNames.has(upper)) {
-                        child.ref.remove();
-                    } else {
-                        seenNames.add(upper);
-                    }
-                } else {
-                    // Bozuk veri varsa sil
-                    child.ref.remove();
-                }
+                if(ad && seenNames.has(ad.trim().toLocaleUpperCase('tr-TR'))) { child.ref.remove(); }
             });
         });
 
-        // 2. Ürün Listesi Temizliği
         db.ref('ayarlar/urun_listesi').once('value', snap => {
             let seenProducts = new Set();
-            const staticProducts = ["Cüzdan yazıcı","Pc","Tarayıcı","Monitör","Ip telefon","Switch","Router","Sunucu","Nvr","Laptop","Lazer yazıcı","Kamera"];
-            
-            staticProducts.forEach(s => seenProducts.add(s.toLocaleUpperCase('tr-TR').trim()));
-
+            staticProductsList.forEach(s => seenProducts.add(s.toLocaleUpperCase('tr-TR').trim()));
             snap.forEach(child => {
                 let val = child.val();
                 let ad = typeof val === 'string' ? val : val.ad;
-                
-                if(ad) {
-                    let upper = ad.trim().toLocaleUpperCase('tr-TR');
-                    if(seenProducts.has(upper)) {
-                        child.ref.remove();
-                    } else {
-                        seenProducts.add(upper);
-                    }
-                } else {
-                    child.ref.remove();
-                }
+                if(ad && seenProducts.has(ad.trim().toLocaleUpperCase('tr-TR'))) { child.ref.remove(); }
             });
         });
     }
 
     function init() {
-        // Envanter listesini format fark etmeksizin doğru okuma
-        db.ref('ayarlar/urun_listesi').on('value', snap => { updateAllSelects(); });
+        db.ref('ayarlar/ui_islemler').on('value', snap => {
+            uiIslemler = [];
+            snap.forEach(i => uiIslemler.push({...i.val(), key: i.key}));
+            updateAllSelects(); updateSubeCounter();
+            if(document.getElementById('sube-modal').style.display === 'block') filterSubeler(); 
+            if(document.getElementById('envanter-modal').style.display === 'block') renderEnvanterList();
+        });
+
+        db.ref('ayarlar/urun_listesi').on('value', snap => { 
+            let list = [];
+            snap.forEach(i => {
+                let val = i.val(); let ad = typeof val === 'string' ? val : val.ad;
+                if(ad) list.push({key: i.key, ad: ad});
+            });
+            dynamicEnvanterler = list;
+            updateAllSelects();
+            if(document.getElementById('envanter-modal').style.display === 'block') renderEnvanterList();
+        });
         
-        // Şube listesini format fark etmeksizin doğru okuma
         db.ref('ayarlar/sube_listesi').on('value', snap => {
             let list = []; 
             snap.forEach(i => {
-                let val = i.val();
-                let ad = typeof val === 'string' ? val : val.ad;
-                if(ad) list.push(ad);
+                let val = i.val(); let ad = typeof val === 'string' ? val : val.ad;
+                if(ad) list.push({key: i.key, ad: ad});
             });
             dynamicSubeler = list; 
             updateSubeCounter();
-            
-            if(document.getElementById('sube-modal').style.display === 'block'){
-                filterSubeler(); 
-            }
+            if(document.getElementById('sube-modal').style.display === 'block') filterSubeler(); 
         });
 
         db.ref('transferler/canli_akis').on('value', snap => {
             const container = document.getElementById('akis-container');
             if(!container) return;
             
-            const groupedData = {};
-            const groupOrder = [];
+            const groupedData = {}; const groupOrder = [];
             
             snap.forEach(i => {
-                const d = i.val();
-                const key = i.key;
-                
-                const tarih = d.tarih || "";
-                const saat = d.saat || "";
+                const d = i.val(); const key = i.key;
+                const tarih = d.tarih || ""; const saat = d.saat || "";
                 const groupKey = d.yer + "|||" + tarih + "|||" + saat;
                 
-                if(!groupedData[groupKey]) {
-                    groupedData[groupKey] = [];
-                }
-                
+                if(!groupedData[groupKey]) groupedData[groupKey] = [];
                 groupedData[groupKey].unshift({ key, d });
-
                 const idx = groupOrder.indexOf(groupKey);
-                if(idx > -1) {
-                    groupOrder.splice(idx, 1);
-                }
+                if(idx > -1) groupOrder.splice(idx, 1);
                 groupOrder.unshift(groupKey);
             });
 
             currentAkisData = groupedData;
-
             let fullHtml = "";
 
             groupOrder.forEach(gKey => {
                 const parts = gKey.split("|||");
-                const yer = parts[0];
-                const tarih = parts[1];
-                const saat = parts[2];
-
+                const yer = parts[0]; const tarih = parts[1]; const saat = parts[2];
                 const gonderenIsmi = groupedData[gKey][0].d.gonderen || "Bilinmiyor";
 
                 let rowsHtml = "";
                 groupedData[gKey].forEach(item => {
-                    const key = item.key;
-                    const d = item.d;
-                    const isD = d.status === "YAPILDI";
-                    const isOnay = d.status === "ONAY BEKLIYOR";
-                    const isReceiver = d.yer === uFullKey;
-                    const isPassiveKP = (d.tip === "ÇIKIŞ" || d.tip === "VER");
+                    const key = item.key; const d = item.d;
+                    const isD = d.status === "YAPILDI"; const isOnay = d.status === "ONAY BEKLIYOR";
+                    const isReceiver = d.yer === uFullKey; const isPassiveKP = (d.tip === "ÇIKIŞ" || d.tip === "VER");
 
                     let actionHtml = "";
                     if(isOnay) {
@@ -493,16 +598,9 @@
                         actionHtml = `<button class="btn-status ${isD?'bg-done':'bg-waiting'}" onclick="db.ref('transferler/canli_akis/${key}').update({status:('${d.status}'==='BEKLEMEDE'?'YAPILDI':'BEKLEMEDE')})">${isD?'YAPILDI':'BEKLİYOR'}</button>`;
                     }
 
-                    let kpCell = "";
-                    if(isPassiveKP) {
-                        kpCell = `<input type="text" class="kp-input-large" readonly style="background:#f5f5f5; border:none; color:#777;" value="${d.kp||''}">`;
-                    } else {
-                        kpCell = `
-                            <div class="kp-wrapper">
-                                <input type="text" id="kp-${key}" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})" value="${d.kp||''}">
-                                <span class="magnifier-btn" onclick="startScannerEx('kp-${key}')">🔍</span>
-                            </div>`;
-                    }
+                    let kpCell = isPassiveKP 
+                        ? `<input type="text" class="kp-input-large" readonly style="background:#f5f5f5; border:none; color:#777;" value="${d.kp||''}">`
+                        : `<div class="kp-wrapper"><input type="text" id="kp-${key}" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})" value="${d.kp||''}"><span class="magnifier-btn" onclick="startScannerEx('kp-${key}')">🔍</span></div>`;
 
                     const checkMark = isD ? ' <span style="font-size:12px;">✅</span>' : '';
 
@@ -530,27 +628,12 @@
                             <button class="btn-circle" onclick="openAkisMenu(event, '${gKey}')">⋮</button>
                         </div>
                     </div>
-                    <table class="excel-table">
-                        <thead>
-                            <tr>
-                                <th style="width:30%;">Ürün-Barkod</th>
-                                <th style="width:20%;">Personel</th>
-                                <th style="width:25%;">KP NO</th>
-                                <th style="width:25%;">Transfer</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rowsHtml}
-                        </tbody>
-                    </table>
+                    <table class="excel-table"><thead><tr><th style="width:30%;">Ürün-Barkod</th><th style="width:20%;">Personel</th><th style="width:25%;">KP NO</th><th style="width:25%;">Transfer</th></tr></thead><tbody>${rowsHtml}</tbody></table>
                 </div>`;
             });
             
             container.innerHTML = fullHtml;
-            
-            if(document.getElementById('akis-ara') && document.getElementById('akis-ara').value !== '') {
-                filterAkis();
-            }
+            if(document.getElementById('akis-ara') && document.getElementById('akis-ara').value !== '') filterAkis();
         });
 
         db.ref('depolar').on('value', snap => {
@@ -559,19 +642,11 @@
                 let rws = ""; 
                 d.forEach(r => { 
                     const v = r.val(); 
-                    rws += `<tr>
-                        <td style="font-weight:bold; color:#444;">${v.urun}</td>
-                        <td style="color:#666;">${v.barkod}</td>
-                    </tr>`; 
+                    rws += `<tr><td style="font-weight:bold; color:#444;">${v.urun}</td><td style="color:#666;">${v.barkod}</td></tr>`; 
                 });
-                c.innerHTML += `
-                <div class="depo-card">
-                    <div style="background:linear-gradient(135deg, #217346, #165230); color:white; padding:12px 15px; font-weight:bold; font-size:13px;">📦 ${d.key} Araç Deposu</div>
-                    <table class="excel-table">${rws}</table>
-                </div>`;
+                c.innerHTML += `<div class="depo-card"><div style="background:linear-gradient(135deg, #217346, #165230); color:white; padding:12px 15px; font-weight:bold; font-size:13px;">📦 ${d.key} Araç Deposu</div><table class="excel-table">${rws}</table></div>`;
             });
         });
-        updateSubeCounter();
     }
 
     function openAkisMenu(e, gKey) {
@@ -584,96 +659,57 @@
         const creatorKod = groupData[0].d.gonderen_kod || uFullKey; 
         const delBtn = document.getElementById('btnDeleteGroup');
         
-        if (uMail !== "ekaradeniz@ziraatbank.com.tr") {
-            delBtn.style.display = 'flex';
-        } else {
-            delBtn.style.display = 'none';
-        }
+        if (uMail !== "ekaradeniz@ziraatbank.com.tr") { delBtn.style.display = 'flex'; } else { delBtn.style.display = 'none'; }
 
         const menu = document.getElementById('akis-context-menu');
         menu.style.display = 'flex';
-        
-        const x = e.pageX - 170; 
-        const y = e.pageY + 15;
-        
-        menu.style.left = x + 'px';
-        menu.style.top = y + 'px';
+        menu.style.left = (e.pageX - 170) + 'px';
+        menu.style.top = (e.pageY + 15) + 'px';
         
         if ("vibrate" in navigator) navigator.vibrate(50);
-
-        setTimeout(() => {
-            document.addEventListener('click', function closeMenu(ev) {
-                if (!ev.target.closest('#akis-context-menu')) {
-                    menu.style.display = 'none';
-                    document.removeEventListener('click', closeMenu);
-                }
-            });
-        }, 10);
+        setTimeout(() => { document.addEventListener('click', function closeMenu(ev) { if (!ev.target.closest('#akis-context-menu')) { menu.style.display = 'none'; document.removeEventListener('click', closeMenu); } }); }, 10);
     }
 
     async function sendAkisMail() {
         document.getElementById('akis-context-menu').style.display = 'none';
         if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
-
         const groupData = currentAkisData[selectedAkisGKey];
-        
-        let takilanlar = [];
-        let alinanlar = [];
-        let persIsmi = groupData[0].d.personel || "";
-        if (persIsmi === "-") persIsmi = "";
+        let takilanlar = []; let alinanlar = [];
+        let persIsmi = groupData[0].d.personel || ""; if (persIsmi === "-") persIsmi = "";
 
         groupData.forEach(item => {
-            if(item.d.tip === "ÇIKIŞ" || item.d.tip === "VER") {
-                takilanlar.push(item.d.barkod || item.d.urun);
-            }
-            if(item.d.tip === "GİRİŞ" || item.d.tip === "AL") {
-                alinanlar.push(item.d.barkod || item.d.urun);
-            }
+            if(item.d.tip === "ÇIKIŞ" || item.d.tip === "VER") takilanlar.push(item.d.barkod || item.d.urun);
+            if(item.d.tip === "GİRİŞ" || item.d.tip === "AL") alinanlar.push(item.d.barkod || item.d.urun);
         });
 
         const bodyText = `Sayın Yetkili,\n\nArızalı olan cihazın değişimi gerçekleştirilmiş olup, envanter bilgileri aşağıda yer almaktadır.\n\nTakılan: ${takilanlar.join(', ')}\nArızalı : ${alinanlar.join(', ')}\n\nBilgilerinize,\nİyi çalışmalar.`;
-
-        try {
-            await navigator.clipboard.writeText(bodyText);
-            alert("✅ İçerik panoya kopyalandı!\nE-posta uygulamanız açılıyor...");
-        } catch (err) {
-            console.error("Panoya kopyalanamadı:", err);
-            alert("Metin panoya otomatik kopyalanamadı. Lütfen manuel olarak kopyalayın.\n\n" + bodyText);
-        }
+        try { await navigator.clipboard.writeText(bodyText); alert("✅ İçerik panoya kopyalandı!\nE-posta uygulamanız açılıyor..."); } 
+        catch (err) { alert("Metin panoya otomatik kopyalanamadı. Lütfen manuel olarak kopyalayın.\n\n" + bodyText); }
 
         const to = "btsahaoperasyonlariyonetimiyetkili@ziraatbank.com.tr";
         const subject = "Envanter Transferi S016 Hk.";
-        
-        let ccText = "btizmirsahabakim@ziraatbank.com.tr";
-        if (persIsmi !== "") {
-            ccText += ";" + persIsmi;
-        }
-
-        const mailtoLink = "mailto:" + to + "?cc=" + encodeURIComponent(ccText) + "&subject=" + encodeURIComponent(subject);
-        
-        window.location.href = mailtoLink;
+        let ccText = "btizmirsahabakim@ziraatbank.com.tr"; if (persIsmi !== "") ccText += ";" + persIsmi;
+        window.location.href = "mailto:" + to + "?cc=" + encodeURIComponent(ccText) + "&subject=" + encodeURIComponent(subject);
     }
 
     function deleteAkisGroup() {
         document.getElementById('akis-context-menu').style.display = 'none';
         if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
-
-        const groupData = currentAkisData[selectedAkisGKey];
-        const creatorKod = groupData[0].d.gonderen_kod || uFullKey;
-        
         if(uMail === "ekaradeniz@ziraatbank.com.tr") return alert("Kayıt silme yetkiniz bulunmamaktadır!");
         
         if(confirm("Bu gruba ait tüm işlemleri kalıcı olarak silmek istediğinize emin misiniz?")) {
-            groupData.forEach(item => {
-                db.ref('transferler/canli_akis/' + item.key).remove();
-            });
+            currentAkisData[selectedAkisGKey].forEach(item => { db.ref('transferler/canli_akis/' + item.key).remove(); });
         }
     }
 
     function addRowEx(type = "ÇIKIŞ") {
         const rowId = 'brk-' + Math.random().toString(36).substr(2, 9);
-        const div = document.createElement('div'); 
-        div.className = "excel-row-container";
+        const inputId = 'urun-' + rowId;
+        const div = document.createElement('div'); div.className = "excel-row-container";
+        
+        const processedList = getProcessedList(staticProductsList, dynamicEnvanterler, 'urun');
+        const defaultUrun = processedList.length > 0 ? processedList[0].ad : "";
+
         div.innerHTML = `
             <select class="type-select ${type==='ÇIKIŞ'?'bg-out':'bg-in'}" onchange="this.classList.toggle('bg-out', this.value==='ÇIKIŞ'); this.classList.toggle('bg-in', this.value==='GİRİŞ')">
                 <option value="ÇIKIŞ" ${type==='ÇIKIŞ'?'selected':''}>Takılan</option>
@@ -683,10 +719,9 @@
                 <input type="number" id="${rowId}" placeholder="Barkod..." class="barkod-input">
                 <span class="magnifier-btn" onclick="startScannerEx('${rowId}')">🔍</span>
             </div>
-            <select class="urun-select" onchange="checkNewUrun(this)"></select>`;
-            
+            <input type="text" id="${inputId}" class="urun-input" readonly value="${defaultUrun}" onclick="openEnvanterModal('${inputId}')" placeholder="Ürün">
+        `;
         document.getElementById('items-container').appendChild(div);
-        updateAllSelects();
     }
 
     let isAddingSube = false;
@@ -694,15 +729,10 @@
         if(isAddingSube) return;
         const n = prompt("Yeni Şube/Lokasyon İsmi?"); 
         if(n && n.trim() !== "") {
-            const trimmed = n.trim();
-            const upper = trimmed.toLocaleUpperCase('tr-TR');
-            const allSubeler = [...staticSubeler, ...dynamicSubeler];
+            const trimmed = n.trim(); const upper = trimmed.toLocaleUpperCase('tr-TR');
+            const processedList = getProcessedList(staticSubeler, dynamicSubeler, 'sube');
             
-            // Çift kayıt koruması
-            if(allSubeler.some(s => s.toLocaleUpperCase('tr-TR') === upper)) {
-                alert("Bu şube zaten listede mevcut!");
-                return;
-            }
+            if(processedList.some(s => s.ad.toLocaleUpperCase('tr-TR') === upper)) { alert("Bu şube zaten listede mevcut!"); return; }
 
             isAddingSube = true;
             db.ref('ayarlar/sube_listesi').push(trimmed).then(() => {
@@ -715,36 +745,35 @@
     function openModal() { document.getElementById('sube-modal').style.display = 'block'; filterSubeler(); }
     function closeModal() { document.getElementById('sube-modal').style.display = 'none'; }
     
+    function openEnvanterModal(inputId) { 
+        currentUrunInputId = inputId;
+        document.getElementById('envanter-modal').style.display = 'block'; 
+        renderEnvanterList(); 
+    }
+    
+    function closeEnvanterModal() { document.getElementById('envanter-modal').style.display = 'none'; }
+
     let isAddingEnv = false;
-    function checkNewUrun(sel) { 
-        if(sel.value === "ADD_NEW") { 
-            if(isAddingEnv) return;
-            const n = prompt("Yeni Envanter?"); 
-            if(n && n.trim() !== "") { 
-                const trimmed = n.trim();
-                const upper = trimmed.toLocaleUpperCase('tr-TR');
-                
-                // Seçeneklerdeki değerleri kontrol et, varsa tekrar ekleme
-                let exists = false;
-                Array.from(sel.options).forEach(opt => {
-                    if(opt.value !== "ADD_NEW" && opt.value.toLocaleUpperCase('tr-TR') === upper) exists = true;
-                });
+    function manualEnvanterAdd() {
+        if(isAddingEnv) return;
+        const n = prompt("Yeni Envanter Çeşidi?");
+        if(n && n.trim() !== "") {
+            const trimmed = n.trim(); const upper = trimmed.toLocaleUpperCase('tr-TR');
+            const processedList = getProcessedList(staticProductsList, dynamicEnvanterler, 'urun');
+            
+            if(processedList.some(s => s.ad.toLocaleUpperCase('tr-TR') === upper)) { alert("Bu envanter zaten listede mevcut!"); return; }
 
-                if(exists) {
-                    alert("Bu envanter zaten listede mevcut!");
-                    sel.value = Array.from(sel.options).find(o => o.value.toLocaleUpperCase('tr-TR') === upper).value;
-                    return;
-                }
+            isAddingEnv = true;
+            db.ref('ayarlar/urun_listesi').push(trimmed).then(() => { 
+                document.getElementById('env-ara').value = trimmed;
+                isAddingEnv = false; 
+            }).catch(() => { isAddingEnv = false; });
+        }
+    }
 
-                isAddingEnv = true;
-                db.ref('ayarlar/urun_listesi').push(trimmed).then(() => {
-                    isAddingEnv = false;
-                    setTimeout(() => sel.value = trimmed, 500); 
-                }).catch(() => { isAddingEnv = false; sel.value = sel.options[1].value; });
-            } else {
-                sel.value = sel.options[1].value;
-            } 
-        } 
+    function selectEnvanter(ad) {
+        if(currentUrunInputId) { document.getElementById(currentUrunInputId).value = ad; }
+        closeEnvanterModal();
     }
 
     function approveTransfer(key) {
@@ -757,29 +786,14 @@
     }
 
     function updateAllSelects() {
-        db.ref('ayarlar/urun_listesi').once('value', snap => {
-            let list = ["Cüzdan yazıcı","Pc","Tarayıcı","Monitör","Ip telefon","Switch","Router","Sunucu","Nvr","Laptop","Lazer yazıcı","Kamera"];
-            
-            snap.forEach(i => { 
-                let val = i.val();
-                let ad = typeof val === 'string' ? val : val.ad;
-                if(ad && !list.includes(ad)) list.push(ad); 
-            });
+        const processedList = getProcessedList(staticProductsList, dynamicEnvanterler, 'urun');
+        const validNames = processedList.map(s => s.ad);
+        const defaultUrun = validNames.length > 0 ? validNames[0] : "";
 
-            document.querySelectorAll('.urun-select').forEach(sel => {
-                const old = sel.value;
-                
-                let h = `<option value="ADD_NEW" style="color:#217346; font-weight:bold;">➕ YENİ ENVANTER EKLE</option>`;
-                list.forEach(u => h += `<option value="${u}">${u}</option>`);
-                
-                sel.innerHTML = h;
-                
-                if(old && old !== "ADD_NEW" && list.includes(old)) {
-                    sel.value = old;
-                } else if (!old) {
-                    sel.value = list[0]; 
-                }
-            });
+        document.querySelectorAll('.urun-input').forEach(inp => {
+            if(inp.value && !validNames.includes(inp.value)) {
+                inp.value = defaultUrun;
+            }
         });
     }
 
@@ -801,23 +815,15 @@
 
         rowElements.forEach(row => {
             const b = String(row.querySelector('.barkod-input').value).trim();
-            const u = row.querySelector('.urun-select').value;
+            const u = row.querySelector('.urun-input').value;
             const type = row.querySelector('.type-select').value;
             
             if(b) {
                 const kpVal = (type === "ÇIKIŞ") ? kpFormatted : "";
                 const data = { 
-                    gonderen: uName, 
-                    yer: target, 
-                    personel: pers,
-                    tip: type, 
-                    barkod: b, 
-                    urun: u, 
-                    status: "BEKLEMEDE", 
-                    kp: kpVal, 
-                    tarih: tarih,
-                    saat: saat, 
-                    gonderen_kod: uFullKey 
+                    gonderen: uName, yer: target, personel: pers, tip: type, 
+                    barkod: b, urun: u, status: "BEKLEMEDE", kp: kpVal, 
+                    tarih: tarih, saat: saat, gonderen_kod: uFullKey 
                 };
                 db.ref('transferler/canli_akis').push(data);
                 addedCount++;
@@ -827,8 +833,7 @@
         if (addedCount > 0) { 
             document.getElementById('items-container').innerHTML = ""; 
             document.getElementById('personel-name').value = "";
-            addRowEx("ÇIKIŞ"); 
-            addRowEx("GİRİŞ"); 
+            addRowEx("ÇIKIŞ"); addRowEx("GİRİŞ"); 
         }
         alert(addedCount > 0 ? "Başarıyla kaydedildi." : "Kaydedilecek veri yok.");
     }
@@ -837,20 +842,53 @@
         const ara = document.getElementById('sube-ara').value.toLocaleUpperCase('tr-TR');
         const list = document.getElementById('modal-list-body'); list.innerHTML = "";
         
-        // Tekrar edenleri temizleyerek birleştirme (Mükerrer isim filtresi)
-        const allUnique = [...new Set([...staticSubeler, ...dynamicSubeler])];
+        const processedList = getProcessedList(staticSubeler, dynamicSubeler, 'sube');
         
-        allUnique.filter(s => s.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
+        processedList.filter(s => s.ad.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
             const d = document.createElement('div'); d.className = "sube-item"; 
-            d.innerHTML = `🏢 <span style="flex:1;">${s}</span>`; 
-            d.onclick = () => { document.getElementById('target-sube').value = s; closeModal(); };
+            
+            d.innerHTML = `
+                <div style="display:flex; width:100%; align-items:center;">
+                    <span style="font-size:16px; margin-right:10px;">🏢</span>
+                    <span style="flex:1; font-weight:bold; color:#444;">${s.ad}</span>
+                    <span style="color:#999; font-size:10px; background:#f5f5f5; padding:4px 8px; border-radius:12px; white-space:nowrap;">⏳ Basılı Tut</span>
+                </div>`; 
+                
+            addLongPressListener(d, 
+                () => { document.getElementById('target-sube').value = s.ad; closeModal(); }, 
+                () => { openAS(s.ad, 'sube', s); }
+            );
+            list.appendChild(d);
+        });
+    }
+
+    function renderEnvanterList() {
+        const ara = document.getElementById('env-ara').value.toLocaleUpperCase('tr-TR');
+        const list = document.getElementById('envanter-list-body'); list.innerHTML = "";
+        
+        const processedList = getProcessedList(staticProductsList, dynamicEnvanterler, 'urun');
+        
+        processedList.filter(s => s.ad.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
+            const d = document.createElement('div'); d.className = "sube-item"; 
+            
+            d.innerHTML = `
+                <div style="display:flex; width:100%; align-items:center;">
+                    <span style="font-size:16px; margin-right:10px;">📦</span>
+                    <span style="flex:1; font-weight:bold; color:#444;">${s.ad}</span>
+                    <span style="color:#999; font-size:10px; background:#f5f5f5; padding:4px 8px; border-radius:12px; white-space:nowrap;">⏳ Basılı Tut</span>
+                </div>`; 
+                
+            addLongPressListener(d, 
+                () => { selectEnvanter(s.ad); }, 
+                () => { openAS(s.ad, 'urun', s); }
+            );
             list.appendChild(d);
         });
     }
     
     function updateSubeCounter() { 
-        const allUnique = new Set([...staticSubeler, ...dynamicSubeler]);
-        document.getElementById('target-sube').placeholder = `📍 Hedef Lokasyon Seçin (${allUnique.size})`; 
+        const processedList = getProcessedList(staticSubeler, dynamicSubeler, 'sube');
+        document.getElementById('target-sube').placeholder = `📍 Hedef Lokasyon Seçin (${processedList.length})`; 
     }
     
     function tabEx(id, el) { document.querySelectorAll('.app-page').forEach(p => p.style.display = 'none'); document.getElementById('p-'+id).style.display = 'block'; document.querySelectorAll('.excel-nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
