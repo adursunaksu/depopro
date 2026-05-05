@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v75.1</title>
+    <title>S016 Depo Takip v75.2</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -130,7 +130,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v75.1</div>
+    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v75.2</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -348,6 +348,8 @@
             
             addRowEx("ÇIKIŞ"); 
             addRowEx("GİRİŞ");
+            
+            cleanDatabase(); // VERİTABANI TEMİZLİĞİNİ BAŞLAT
             init();
         }).catch(() => alert("Giriş Hatalı!"));
     }
@@ -358,6 +360,59 @@
                 location.reload();
             });
         }
+    }
+
+    // YENİ: VERİTABANI KOPYA VE ÇÖP TEMİZLEYİCİ
+    function cleanDatabase() {
+        // 1. Şube Listesi Temizliği
+        db.ref('ayarlar/sube_listesi').once('value', snap => {
+            let seenNames = new Set();
+            
+            // Sabit listedeki isimleri zaten var kabul edelim, tekrar Firebase'e kaydetmeye gerek yok.
+            staticSubeler.forEach(s => seenNames.add(s.toLocaleUpperCase('tr-TR').trim()));
+            
+            snap.forEach(child => {
+                let val = child.val();
+                let ad = typeof val === 'string' ? val : val.ad;
+                
+                if(ad) {
+                    let upper = ad.trim().toLocaleUpperCase('tr-TR');
+                    // Eğer bu şube zaten listede varsa (veya koda gömülü sabitlerde varsa), bu satırı DB'den sil
+                    if(seenNames.has(upper)) {
+                        child.ref.remove();
+                    } else {
+                        seenNames.add(upper);
+                    }
+                } else {
+                    // Bozuk veri varsa sil
+                    child.ref.remove();
+                }
+            });
+        });
+
+        // 2. Ürün Listesi Temizliği
+        db.ref('ayarlar/urun_listesi').once('value', snap => {
+            let seenProducts = new Set();
+            const staticProducts = ["Cüzdan yazıcı","Pc","Tarayıcı","Monitör","Ip telefon","Switch","Router","Sunucu","Nvr","Laptop","Lazer yazıcı","Kamera"];
+            
+            staticProducts.forEach(s => seenProducts.add(s.toLocaleUpperCase('tr-TR').trim()));
+
+            snap.forEach(child => {
+                let val = child.val();
+                let ad = typeof val === 'string' ? val : val.ad;
+                
+                if(ad) {
+                    let upper = ad.trim().toLocaleUpperCase('tr-TR');
+                    if(seenProducts.has(upper)) {
+                        child.ref.remove();
+                    } else {
+                        seenProducts.add(upper);
+                    }
+                } else {
+                    child.ref.remove();
+                }
+            });
+        });
     }
 
     function init() {
