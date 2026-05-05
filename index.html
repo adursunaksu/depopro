@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v74.5</title>
+    <title>S016 Depo Takip v74.7</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -15,9 +15,10 @@
         .bg-out { background-color: #d9e9f3 !important; color: #0078d4 !important; font-weight: bold; } 
         
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; font-size: 12px; transition: background-color 0.2s, box-shadow 0.2s; }
-        body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body { margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none; -webkit-user-select: none; }
+        input, select, textarea { user-select: auto; -webkit-user-select: auto; }
         
-        #sube-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:3000; padding:20px; backdrop-filter: blur(3px); }
+        #sube-modal, #envanter-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:3000; padding:20px; backdrop-filter: blur(3px); }
         .modal-box { background:white; border-radius:12px; height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .modal-search { padding:15px; border-bottom:1px solid #eee; background: #fafafa; }
         .modal-search input { width:100%; padding:14px; border:2px solid var(--excell-green); border-radius:8px; font-size:14px; outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
@@ -28,6 +29,7 @@
         .modal-list { flex:1; overflow-y:auto; background: #fff; }
         .sube-item { padding:15px 20px; border-bottom:1px solid #f5f5f5; font-size:13px; color: #444; cursor: pointer; display: flex; align-items: center; gap: 8px; }
         .sube-item:active { background: #e8f5e9; padding-left: 25px; font-weight: bold; color: var(--excell-green); }
+        .dynamic-sube { background: #fafafa; }
 
         .excel-bar { background: linear-gradient(135deg, #217346, #165230); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(33,115,70,0.4); z-index: 100; }
         .user-cell { background: rgba(255,255,255,0.9); color: #333; padding: 5px 12px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -42,7 +44,9 @@
         .excel-table th, .excel-table td { border-bottom: 1px solid #eee; padding: 10px 6px; text-align: left; overflow: hidden; }
         .excel-table th { background: #f8f9fa; font-size: 11px; font-weight: bold; color: #555; text-transform: uppercase; }
         
-        .depo-row { transition: background 0.2s; }
+        .depo-item-row { transition: background 0.2s; cursor: pointer; }
+        .depo-item-row:active { background: #f0f8f1; }
+        
         .row-waiting { background-color: #fcf1f2 !important; border-left: 4px solid #dc3545; }
         .row-onay { background-color: #fff8e6 !important; border-left: 4px solid #ff9800; }
         .row-done { background-color: #f1f8f3 !important; border-left: 4px solid #28a745; color: #444; }
@@ -62,7 +66,7 @@
         .kp-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
         .kp-input-large { width: 100%; border: 1px solid #ddd; padding: 6px 30px 6px 8px; border-radius: 4px; height: 30px; font-size: 11px; outline: none; }
         .kp-input-large:focus { border-color: var(--excell-green); box-shadow: 0 0 0 2px rgba(33,115,70,0.1); }
-        .magnifier-btn { position: absolute; right: 8px; cursor: pointer; font-size: 16px; color: var(--excell-green); user-select: none; padding: 5px; }
+        .magnifier-btn { position: absolute; right: 8px; cursor: pointer; font-size: 16px; color: var(--excell-green); padding: 5px; }
         
         #camera-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:3500; padding:10px; flex-direction:column; justify-content:center; backdrop-filter: blur(5px); }
         #reader { width:100%; max-width:400px; margin:auto; background:white; border-radius:12px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -94,6 +98,8 @@
         
         .akis-card { margin-bottom:15px; border-radius:10px; overflow:hidden; background:#fff; box-shadow: var(--shadow); border: 1px solid #eee; }
         .depo-card { margin-bottom:15px; border-radius:12px; overflow:hidden; background:white; box-shadow: var(--shadow); border: 1px solid #eee; }
+        
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -115,6 +121,15 @@
     <div class="context-menu-item" id="btnDeleteGroup" onclick="deleteAkisGroup()">🗑️ Grubu Sil</div>
 </div>
 
+<div id="action-sheet" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:6000; flex-direction:column; justify-content:flex-end; backdrop-filter: blur(2px);">
+    <div style="background:white; border-top-left-radius:20px; border-top-right-radius:20px; padding:25px 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out;">
+        <h3 id="as-title" style="margin-top:0; margin-bottom: 20px; color:var(--excell-green); text-align:center; font-size:16px;">İşlem Seç</h3>
+        <button onclick="asEdit()" style="width:100%; padding:15px; margin-bottom:12px; background:#f5f5f5; color:#333; border:1px solid #ddd; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">✏️ Düzenle</button>
+        <button onclick="asDelete()" style="width:100%; padding:15px; margin-bottom:12px; background:#ffebee; color:#d32f2f; border:1px solid #ffcdd2; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">🗑️ Sil</button>
+        <button onclick="closeAS()" style="width:100%; padding:15px; background:#444; color:white; border:none; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">Vazgeç</button>
+    </div>
+</div>
+
 <div id="sube-modal">
     <div class="modal-box">
         <div class="modal-search"><input type="text" id="sube-ara" placeholder="Şube ara (Kod veya İsim)..." oninput="filterSubeler()"></div>
@@ -124,13 +139,22 @@
     </div>
 </div>
 
+<div id="envanter-modal">
+    <div class="modal-box">
+        <div style="padding:15px; background:linear-gradient(135deg, #217346, #165230); color:white; font-weight:bold; text-align:center; font-size:14px; letter-spacing:1px;">📦 ENVANTER YÖNETİMİ</div>
+        <div class="add-btn-list" onclick="manualEnvanterAdd()">➕ YENİ ENVANTER EKLE</div>
+        <div class="modal-list" id="envanter-list-body"></div>
+        <button onclick="closeEnvanterModal()" style="padding:16px; background:#444; color:white; border:none; font-weight:bold; font-size:14px; cursor:pointer;">KAPAT</button>
+    </div>
+</div>
+
 <div id="camera-modal">
     <button id="camera-close-btn" onclick="stopScannerEx()">×</button>
     <div id="reader"></div>
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v74.5</div>
+    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v74.7</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -195,6 +219,7 @@
 
     const aracMap = {
         "adaksu@ziraatbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
+        "ahmetdursunaksu@zbank.com.tr": { ad: "AHMET", kod: "s542 Ahmet" },
         "dokocadag@ziraatbank.com.tr": { ad: "DOĞAÇ", kod: "s573 Doğaç" },
         "taylansahin@ziraatbank.com.tr": { ad: "TAYLAN", kod: "s574 Taylan" },
         "adincel@ziraatbank.com.tr": { ad: "ALİ RIZA", kod: "s569 Ali Rıza" },
@@ -237,6 +262,47 @@
     ];
     let dynamicSubeler = [];
     
+    // YENİ: ENVANTER LİSTELERİ
+    const staticEnvanterler = ["Cüzdan yazıcı","Pc","Tarayıcı","Monitör","Ip telefon","Switch","Router","Sunucu","Nvr","Laptop","Lazer yazıcı","Kamera"];
+    let dynamicEnvanterler = [];
+    
+    // ACTION SHEET DEĞİŞKENLERİ
+    let asRef = ""; let asType = ""; let asData = null;
+
+    function openAS(title, refPath, type, data) {
+        document.getElementById('as-title').innerText = title;
+        asRef = refPath; asType = type; asData = data;
+        document.getElementById('action-sheet').style.display = 'flex';
+        if ("vibrate" in navigator) navigator.vibrate(50);
+    }
+    function closeAS() { document.getElementById('action-sheet').style.display = 'none'; }
+    
+    function asDelete() {
+        if(confirm("Kalıcı olarak silinecek. Emin misiniz?")) {
+            db.ref(asRef).remove();
+            closeAS();
+            if(asType === 'sube' && document.getElementById('target-sube').value === asData.ad) {
+                document.getElementById('target-sube').value = "";
+            }
+        }
+    }
+    function asEdit() {
+        closeAS();
+        setTimeout(() => {
+            if(asType === 'sube') {
+                const yeni = prompt("Şube adını düzenle:", asData.ad);
+                if(yeni && yeni.trim() !== "") db.ref(asRef).set(yeni.trim());
+            } else if(asType === 'envanter') {
+                const yeni = prompt("Envanter adını düzenle:", asData.ad);
+                if(yeni && yeni.trim() !== "") db.ref(asRef).set(yeni.trim());
+            } else if(asType === 'depo') {
+                const yUrun = prompt("Ürün Adı:", asData.urun) || asData.urun;
+                const yBarkod = prompt("Barkod:", asData.barkod) || asData.barkod;
+                if(yUrun && yBarkod) db.ref(asRef).update({urun: yUrun, barkod: yBarkod});
+            }
+        }, 300);
+    }
+
     window.onload = function() {
         const savedMail = localStorage.getItem('s016_mail');
         const savedPass = localStorage.getItem('s016_pass');
@@ -330,7 +396,6 @@
             
             let displayUser = uName;
             
-            // KONTROLÖR YETKİLERİ KISITLAMASI
             if(uMail === "ekaradeniz@ziraatbank.com.tr") {
                 displayUser = `<span style="color:#d32f2f; font-size:10px;">KONTROLÖR:</span> ` + uName;
                 document.getElementById('btnSave').style.display = "none";
@@ -363,9 +428,25 @@
     }
 
     function init() {
-        db.ref('ayarlar/urun_listesi').on('value', snap => { updateAllSelects(); });
+        // Envanterleri (Ürünleri) Dinle
+        db.ref('ayarlar/urun_listesi').on('value', snap => { 
+            let list = [];
+            snap.forEach(i => list.push({key: i.key, val: i.val()}));
+            dynamicEnvanterler = list;
+            updateAllSelects();
+            
+            if(document.getElementById('envanter-modal').style.display === 'block') {
+                renderEnvanterList();
+            }
+        });
+        
+        // Şubeleri Dinle
         db.ref('ayarlar/sube_listesi').on('value', snap => {
-            let list = []; snap.forEach(i => list.push(i.val()));
+            let list = []; 
+            snap.forEach(i => {
+                const val = i.val();
+                list.push({key: i.key, val: typeof val === 'string' ? val : (val.ad || JSON.stringify(val))});
+            });
             dynamicSubeler = list; updateSubeCounter();
             
             if(document.getElementById('sube-modal').style.display === 'block'){
@@ -373,6 +454,7 @@
             }
         });
 
+        // Akışı Dinle
         db.ref('transferler/canli_akis').on('value', snap => {
             const container = document.getElementById('akis-container');
             if(!container) return;
@@ -491,26 +573,111 @@
             }
         });
 
+        // Depoları Dinle
         db.ref('depolar').on('value', snap => {
             const c = document.getElementById('depoExList'); c.innerHTML = "";
             snap.forEach(d => {
                 let rws = ""; 
                 d.forEach(r => { 
                     const v = r.val(); 
-                    rws += `<tr>
+                    const rKey = r.key;
+                    rws += `<tr class="depo-item-row" data-ref="depolar/${d.key}/${rKey}" data-urun="${v.urun}" data-barkod="${v.barkod}">
                         <td style="font-weight:bold; color:#444;">${v.urun}</td>
-                        <td style="color:#666;">${v.barkod}</td>
+                        <td style="color:#666; display:flex; justify-content:space-between;">
+                            ${v.barkod} <span style="color:#bbb;">⋮</span>
+                        </td>
                     </tr>`; 
                 });
                 c.innerHTML += `
                 <div class="depo-card">
-                    <div style="background:linear-gradient(135deg, #217346, #165230); color:white; padding:12px 15px; font-weight:bold; font-size:13px;">📦 ${d.key} Araç Deposu</div>
+                    <div style="background:linear-gradient(135deg, #217346, #165230); color:white; padding:12px 15px; font-weight:bold; font-size:13px; text-align:center;">📦 ${d.key} Araç Deposu</div>
                     <table class="excel-table">${rws}</table>
                 </div>`;
             });
         });
         updateSubeCounter();
     }
+
+    // Dokunmatik Basılı Tutma Olayları (Depo Listesi)
+    let depoPressTimer, depoDragging = false, depoLongPressed = false;
+    document.getElementById('p-depo').addEventListener('touchstart', e => {
+        const tr = e.target.closest('.depo-item-row');
+        if(!tr) return;
+        depoDragging = false; depoLongPressed = false;
+        depoPressTimer = setTimeout(() => {
+            if(!depoDragging) {
+                depoLongPressed = true;
+                const ref = tr.getAttribute('data-ref');
+                const u = tr.getAttribute('data-urun');
+                const b = tr.getAttribute('data-barkod');
+                openAS(u, ref, 'depo', {urun: u, barkod: b});
+            }
+        }, 600);
+    });
+    document.getElementById('p-depo').addEventListener('touchmove', () => { depoDragging = true; clearTimeout(depoPressTimer); });
+    document.getElementById('p-depo').addEventListener('touchend', () => clearTimeout(depoPressTimer));
+    document.getElementById('p-depo').addEventListener('contextmenu', e => {
+        const tr = e.target.closest('.depo-item-row');
+        if(!tr) return;
+        e.preventDefault();
+        const ref = tr.getAttribute('data-ref');
+        const u = tr.getAttribute('data-urun');
+        const b = tr.getAttribute('data-barkod');
+        openAS(u, ref, 'depo', {urun: u, barkod: b});
+    });
+
+    // Dokunmatik Basılı Tutma Olayları (Şube Listesi)
+    let subePressTimer, subeDragging = false, subeLongPressed = false;
+    document.getElementById('modal-list-body').addEventListener('touchstart', e => {
+        const item = e.target.closest('.dynamic-sube');
+        if(!item) return;
+        subeDragging = false; subeLongPressed = false;
+        subePressTimer = setTimeout(() => {
+            if(!subeDragging) {
+                subeLongPressed = true;
+                const ref = item.getAttribute('data-ref');
+                const ad = item.getAttribute('data-ad');
+                openAS(ad, ref, 'sube', {ad: ad});
+            }
+        }, 600);
+    });
+    document.getElementById('modal-list-body').addEventListener('touchmove', () => { subeDragging = true; clearTimeout(subePressTimer); });
+    document.getElementById('modal-list-body').addEventListener('touchend', () => clearTimeout(subePressTimer));
+    document.getElementById('modal-list-body').addEventListener('contextmenu', e => {
+        const item = e.target.closest('.dynamic-sube');
+        if(!item) return;
+        e.preventDefault();
+        const ref = item.getAttribute('data-ref');
+        const ad = item.getAttribute('data-ad');
+        openAS(ad, ref, 'sube', {ad: ad});
+    });
+
+    // YENİ: Dokunmatik Basılı Tutma Olayları (Envanter Listesi)
+    let envPressTimer, envDragging = false, envLongPressed = false;
+    document.getElementById('envanter-list-body').addEventListener('touchstart', e => {
+        const item = e.target.closest('.dynamic-sube');
+        if(!item) return;
+        envDragging = false; envLongPressed = false;
+        envPressTimer = setTimeout(() => {
+            if(!envDragging) {
+                envLongPressed = true;
+                const ref = item.getAttribute('data-ref');
+                const ad = item.getAttribute('data-ad');
+                openAS(ad, ref, 'envanter', {ad: ad});
+            }
+        }, 600);
+    });
+    document.getElementById('envanter-list-body').addEventListener('touchmove', () => { envDragging = true; clearTimeout(envPressTimer); });
+    document.getElementById('envanter-list-body').addEventListener('touchend', () => clearTimeout(envPressTimer));
+    document.getElementById('envanter-list-body').addEventListener('contextmenu', e => {
+        const item = e.target.closest('.dynamic-sube');
+        if(!item) return;
+        e.preventDefault();
+        const ref = item.getAttribute('data-ref');
+        const ad = item.getAttribute('data-ad');
+        openAS(ad, ref, 'envanter', {ad: ad});
+    });
+
 
     function openAkisMenu(e, gKey) {
         e.stopPropagation();
@@ -628,29 +795,67 @@
         updateAllSelects();
     }
 
+    let isAddingSube = false;
     function manualAdd() { 
+        if(isAddingSube) return;
         const n = prompt("Yeni Şube/Lokasyon İsmi?"); 
-        if(n) {
-            db.ref('ayarlar/sube_listesi').push(n).then(() => {
-                document.getElementById('sube-ara').value = n;
-                filterSubeler(); 
-            });
+        if(n && n.trim() !== "") {
+            isAddingSube = true;
+            db.ref('ayarlar/sube_listesi').push(n.trim()).then(() => {
+                isAddingSube = false;
+                document.getElementById('sube-ara').value = n.trim();
+            }).catch(() => { isAddingSube = false; });
         } 
     }
     
     function openModal() { document.getElementById('sube-modal').style.display = 'block'; filterSubeler(); }
     function closeModal() { document.getElementById('sube-modal').style.display = 'none'; }
     
+    // YENİ: Envanter Yönetim Fonksiyonları
+    function openEnvanterModal() { document.getElementById('envanter-modal').style.display = 'block'; renderEnvanterList(); }
+    function closeEnvanterModal() { document.getElementById('envanter-modal').style.display = 'none'; }
+    
+    let isAddingEnv = false;
+    function manualEnvanterAdd() {
+        if(isAddingEnv) return;
+        const n = prompt("Yeni Envanter Adı?");
+        if(n && n.trim() !== "") {
+            isAddingEnv = true;
+            db.ref('ayarlar/urun_listesi').push(n.trim()).then(() => {
+                isAddingEnv = false;
+            }).catch(() => { isAddingEnv = false; });
+        }
+    }
+
+    function renderEnvanterList() {
+        const list = document.getElementById('envanter-list-body'); 
+        list.innerHTML = "";
+        
+        staticEnvanterler.forEach(s => {
+            const d = document.createElement('div'); d.className = "sube-item"; 
+            d.innerHTML = `📦 <span style="flex:1;">${s}</span>`;
+            list.appendChild(d);
+        });
+
+        dynamicEnvanterler.forEach(s => {
+            const d = document.createElement('div'); 
+            d.className = "sube-item dynamic-sube"; 
+            d.setAttribute('data-ref', 'ayarlar/urun_listesi/' + s.key);
+            d.setAttribute('data-ad', s.val);
+            d.innerHTML = `🟢 <span style="flex:1; font-weight:bold;">${s.val}</span> <span style="color:#aaa; font-size:16px;">⋮</span>`; 
+            
+            d.onclick = (e) => { 
+                if(envLongPressed) { e.preventDefault(); return; }
+            };
+            list.appendChild(d);
+        });
+    }
+
     function checkNewUrun(sel) { 
-        if(sel.value === "ADD_NEW") { 
-            const n = prompt("Yeni Envanter?"); 
-            if(n) { 
-                db.ref('ayarlar/urun_listesi').push(n); 
-                setTimeout(() => sel.value = n, 500); 
-            } else {
-                // İptal edilirse listedeki ilk normal ürüne dönsün (0. index ADD_NEW olduğu için 1'e ayarlıyoruz)
-                sel.value = sel.options[1].value;
-            } 
+        if(sel.value === "MANAGE") { 
+            openEnvanterModal();
+            // Tıklandıktan sonra listede tekrar ilk normal ürünü göstersin ki ekranda MANAGE yazısı takılı kalmasın
+            sel.value = staticEnvanterler[0]; 
         } 
     }
 
@@ -664,25 +869,22 @@
     }
 
     function updateAllSelects() {
-        db.ref('ayarlar/urun_listesi').once('value', snap => {
-            let list = ["Cüzdan yazıcı","Pc","Tarayıcı","Monitör","Ip telefon","Switch","Router","Sunucu","Nvr","Laptop","Lazer yazıcı","Kamera"];
-            snap.forEach(i => { if(!list.includes(i.val())) list.push(i.val()); });
-            document.querySelectorAll('.urun-select').forEach(sel => {
-                const old = sel.value;
-                
-                // Envanter ekleme seçeneği en üstte eklendi
-                let h = `<option value="ADD_NEW" style="color:#217346; font-weight:bold;">➕ YENİ ENVANTER EKLE</option>`;
-                list.forEach(u => h += `<option value="${u}">${u}</option>`);
-                
-                sel.innerHTML = h;
-                
-                if(old && old !== "ADD_NEW" && list.includes(old)) {
-                    sel.value = old;
-                } else if (!old) {
-                    // Varsayılan olarak en üstteki "EKLE" butonu değil, listedeki ilk ürün ("Cüzdan yazıcı") seçili gelsin
-                    sel.value = list[0]; 
-                }
-            });
+        document.querySelectorAll('.urun-select').forEach(sel => {
+            const old = sel.value;
+            let h = `<option value="MANAGE" style="color:#217346; font-weight:bold;">⚙️ ENVANTER EKLE / YÖNET</option>`;
+            
+            staticEnvanterler.forEach(u => h += `<option value="${u}">${u}</option>`);
+            dynamicEnvanterler.forEach(u => h += `<option value="${u.val}">${u.val}</option>`);
+            
+            sel.innerHTML = h;
+            
+            // Eğer daha önceden seçili olan ürün statik veya dinamik listede varsa onu seç, yoksa ilk ürünü seç
+            let exists = staticEnvanterler.includes(old) || dynamicEnvanterler.some(e => e.val === old);
+            if(old && old !== "MANAGE" && exists) {
+                sel.value = old;
+            } else {
+                sel.value = staticEnvanterler[0]; 
+            }
         });
     }
 
@@ -753,9 +955,24 @@
     function filterSubeler() {
         const ara = document.getElementById('sube-ara').value.toLocaleUpperCase('tr-TR');
         const list = document.getElementById('modal-list-body'); list.innerHTML = "";
-        const all = [...staticSubeler, ...dynamicSubeler];
-        all.filter(s => s.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
-            const d = document.createElement('div'); d.className = "sube-item"; d.innerHTML = `🏢 <span style="flex:1;">${s}</span>`; d.onclick = () => { document.getElementById('target-sube').value = s; closeModal(); };
+        
+        staticSubeler.filter(s => s.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
+            const d = document.createElement('div'); d.className = "sube-item"; d.innerHTML = `🏢 <span style="flex:1;">${s}</span>`; 
+            d.onclick = () => { document.getElementById('target-sube').value = s; closeModal(); };
+            list.appendChild(d);
+        });
+
+        dynamicSubeler.filter(s => s.val.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
+            const d = document.createElement('div'); 
+            d.className = "sube-item dynamic-sube"; 
+            d.setAttribute('data-ref', 'ayarlar/sube_listesi/' + s.key);
+            d.setAttribute('data-ad', s.val);
+            d.innerHTML = `🟢 <span style="flex:1; font-weight:bold;">${s.val}</span> <span style="color:#aaa; font-size:16px;">⋮</span>`; 
+            
+            d.onclick = (e) => { 
+                if(subeLongPressed) { e.preventDefault(); return; }
+                document.getElementById('target-sube').value = s.val; closeModal(); 
+            };
             list.appendChild(d);
         });
     }
