@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v74.7</title>
+    <title>S016 Depo Takip v74.8</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -29,7 +29,7 @@
         .modal-list { flex:1; overflow-y:auto; background: #fff; }
         .sube-item { padding:15px 20px; border-bottom:1px solid #f5f5f5; font-size:13px; color: #444; cursor: pointer; display: flex; align-items: center; gap: 8px; }
         .sube-item:active { background: #e8f5e9; padding-left: 25px; font-weight: bold; color: var(--excell-green); }
-        .dynamic-sube { background: #fafafa; }
+        .dynamic-sube { background: #fff; }
 
         .excel-bar { background: linear-gradient(135deg, #217346, #165230); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(33,115,70,0.4); z-index: 100; }
         .user-cell { background: rgba(255,255,255,0.9); color: #333; padding: 5px 12px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -135,7 +135,7 @@
         <div class="modal-search"><input type="text" id="sube-ara" placeholder="Şube ara (Kod veya İsim)..." oninput="filterSubeler()"></div>
         <div class="add-btn-list" onclick="manualAdd()">➕ LİSTEDE OLMAYAN ŞUBEYİ EKLE</div>
         <div class="modal-list" id="modal-list-body"></div>
-        <button onclick="closeModal()" style="padding:16px; background:#444; color:white; border:none; font-weight:bold; font-size:14px; cursor:pointer;">VAZGEÇ</button>
+        <button onclick="closeModal()" style="padding:16px; background:#444; color:white; border:none; font-weight:bold; font-size:14px; cursor:pointer;">KAPAT</button>
     </div>
 </div>
 
@@ -154,7 +154,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v74.7</div>
+    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v74.8</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -226,44 +226,14 @@
         "ahaksu@ziraatbank.com.tr": { ad: "HALUK", kod: "s528 Haluk" }
     };
 
+    // SADECE İLK GÖÇ (MIGRATION) İÇİN GEREKLİ LİSTELER
     const staticSubeler = [
-        "S016 İzmir Saha Depo", "68 Bergama-İzmir Şubesi", "137 İzmir Şubesi", "138 Urla-İzmir Şubesi", 
-        "139 Bayındır-İzmir Şubesi", "140 Tire-İzmir Şubesi", "141 Çeşme-İzmir Şubesi", "142 Seferihisar-İzmir Şubesi", 
-        "143 Karaburun-İzmir Şubesi", "145 Kemalpaşa-İzmir Şubesi", "146 Menemen-İzmir Şubesi", "188 Manisa Şubesi", 
-        "189 Akhisar-Manisa Şubesi", "190 Alaşehir-Manisa Şubesi", "191 Demirci-Manisa Şubesi", "192 Salihli-Manisa Şubesi", 
-        "193 Soma-Manisa Şubesi", "194 Kırkağaç-Manisa Şubesi", "195 Turgutlu-Manisa Şubesi", "196 Kula-Manisa Şubesi", 
-        "197 Gördes-Manisa Şubesi", "221 Ödemiş-İzmir Şubesi", "317 Torbalı-İzmir Şubesi", "344 Foça-İzmir Şubesi", 
-        "386 Kınık-İzmir Şubesi", "387 Dikili-İzmir Şubesi", "410 Çankaya-İzmir Şubesi", "411 Karşıyaka-İzmir Şubesi", 
-        "422 Kiraz-İzmir Şubesi", "561 Selçuk-İzmir Şubesi", "562 Selendi-Manisa Şubesi", "572 Sarıgöl-Manisa Şubesi", 
-        "590 Alaçatı Çeşme-İzmir Şubesi", "615 Bornova-İzmir Şubesi", "622 Saruhanlı-Manisa Şubesi", "678 Eşrefpaşa-İzmir Şubesi", 
-        "711 Buca-İzmir Şubesi", "712 Alsancak-İzmir Şubesi", "714 Aliağa-İzmir Şubesi", "726 Narlıdere-İzmir Şubesi", 
-        "730 Ahmetli-Manisa Şubesi", "735 Gölmarmara-Manisa Şubesi", "776 Konak-İzmir Şubesi", "791 Menderes-İzmir Şubesi", 
-        "800 Çiğli-İzmir Şubesi", "803 Bayraklı-İzmir Şubesi", "804 Hatay-İzmir Şubesi", "807 Göztepe-İzmir Şubesi", 
-        "808 Balçova-İzmir Şubesi", "812 Karabağlar-İzmir Şubesi", "814 Üçyol-İzmir Şubesi", "869 Köprübaşı-Manisa Şubesi", 
-        "884 26 Ağustos-İzmir Şubesi", "902 Şirinyer-İzmir Şubesi", "904 Şemikler-İzmir Şubesi", "911 Altındağ-İzmir Şubesi", 
-        "928 Gümüşpala-İzmir Şubesi", "934 Denizbostanlı-İzmir Şubesi", "974 Gümüldür Menderes-İzmir Şubesi", 
-        "975 MTK Çarşı-İzmir Şubesi", "999 Çamdibi-İzmir Şubesi", "1000 Gaziemir-İzmir Şubesi", "1021 Beydağ-İzmir Şubesi", 
-        "1043 Yeşilyurt-İzmir Şubesi", "1089 Alaybey-İzmir Şubesi", "1203 Üçkuyular-İzmir Şubesi", "1204 Kahramanlar-İzmir Şubesi", 
-        "1256 Mesir-Manisa Şubesi", "1333 Efes-İzmir Şubesi", "1403 Kazımdirik-İzmir Şubesi", "1446 Ege Tıp-İzmir Şubesi", 
-        "1506 9 Eylül Üniversitesi-İzmir Şubesi", "1533 Fahrettin Altay-İzmir Şubesi", "1625 Güzelbahçe-İzmir Şubesi", 
-        "1743 Işıkkent-İzmir Şubesi", "1750 İzmir Para Grup Merkezi", "1751 İzmir Kurumsal Şube", "1768 Atatürk OSB-İzmir Ticari Şube", 
-        "1778 Yeni Gıda Çarşısı-İzmir Şubesi", "1815 İzmir Bölge Yöneticiliği-Konak", "1816 İzmir Bölge Yöneticiliği-Karşıyaka", 
-        "1840 Manisa Bölge Yöneticiliği", "1903 Girne Bulvarı-İzmir Şubesi", "1938 Manisa Ticari Şube", "1958 Karabağlar-İzmir Ticari Şube", 
-        "1961 Bozyaka-İzmir Şubesi", "1972 Ayrancılar-İzmir Şubesi", "1984 Manavkuyu-İzmir Şubesi", "1987 Yenişakran Aliağa-İzmir Şubesi", 
-        "1992 Gediz Mahallesi-İzmir Şubesi", "1993 Yıkıkkemer-İzmir Şubesi", "2081 Yeni Girne-İzmir Şubesi", "2088 Şehitler-Manisa Şubesi", 
-        "2129 Atakent-İzmir Şubesi", "2137 Osmangazi Bayraklı-İzmir Şubesi", "2152 Ataşehir-İzmir Şubesi", "2159 İzmir Caddesi-Manisa Şubesi", 
-        "2170 Hasan Tahsin Buca-İzmir Şubesi", "2267 Kemalpaşa-İzmir Ticari Şube", "2319 Cumhuriyet Salihli-Manisa Şubesi", 
-        "2335 Bornova Ata-İzmir Şubesi", "2408 Şehzadeler-Manisa Şubesi", "2425 Seydiköy Gaziemir-İzmir Şubesi", 
-        "2436 Menderes Caddesi-İzmir Şubesi", "2474 Çağlak Akhisar-Manisa Şubesi", "2477 Ulukent Menemen-İzmir Şubesi", 
-        "2494 4. Sanayi Sitesi-İzmir Şubesi", "2496 Ulus Meydanı Ödemiş-İzmir Şubesi", "2504 7 Eylül Turgutlu-Manisa Şubesi", 
-        "2514 Çandarlı Dikili-İzmir Şubesi", "2515 1. Sanayi-İzmir Şubesi", "2566 Ertuğrul Mahallesi Torbalı-İzmir Şubesi", 
-        "2630 Yeşilova Bornova-İzmir Şubesi", "2642 Yunusemre-Manisa Şubesi", "2673 Bakırçay Bergama-İzmir Şubesi", 
-        "2697 Atatürk Hastanesi-İzmir Şubesi"
+        "S016 İzmir Saha Depo", "68 Bergama-İzmir Şubesi", "137 İzmir Şubesi", "138 Urla-İzmir Şubesi", "139 Bayındır-İzmir Şubesi", "140 Tire-İzmir Şubesi", "141 Çeşme-İzmir Şubesi", "142 Seferihisar-İzmir Şubesi", "143 Karaburun-İzmir Şubesi", "145 Kemalpaşa-İzmir Şubesi", "146 Menemen-İzmir Şubesi", "188 Manisa Şubesi", "189 Akhisar-Manisa Şubesi", "190 Alaşehir-Manisa Şubesi", "191 Demirci-Manisa Şubesi", "192 Salihli-Manisa Şubesi", "193 Soma-Manisa Şubesi", "194 Kırkağaç-Manisa Şubesi", "195 Turgutlu-Manisa Şubesi", "196 Kula-Manisa Şubesi", "197 Gördes-Manisa Şubesi", "221 Ödemiş-İzmir Şubesi", "317 Torbalı-İzmir Şubesi", "344 Foça-İzmir Şubesi", "386 Kınık-İzmir Şubesi", "387 Dikili-İzmir Şubesi", "410 Çankaya-İzmir Şubesi", "411 Karşıyaka-İzmir Şubesi", "422 Kiraz-İzmir Şubesi", "561 Selçuk-İzmir Şubesi", "562 Selendi-Manisa Şubesi", "572 Sarıgöl-Manisa Şubesi", "590 Alaçatı Çeşme-İzmir Şubesi", "615 Bornova-İzmir Şubesi", "622 Saruhanlı-Manisa Şubesi", "678 Eşrefpaşa-İzmir Şubesi", "711 Buca-İzmir Şubesi", "712 Alsancak-İzmir Şubesi", "714 Aliağa-İzmir Şubesi", "726 Narlıdere-İzmir Şubesi", "730 Ahmetli-Manisa Şubesi", "735 Gölmarmara-Manisa Şubesi", "776 Konak-İzmir Şubesi", "791 Menderes-İzmir Şubesi", "800 Çiğli-İzmir Şubesi", "803 Bayraklı-İzmir Şubesi", "804 Hatay-İzmir Şubesi", "807 Göztepe-İzmir Şubesi", "808 Balçova-İzmir Şubesi", "812 Karabağlar-İzmir Şubesi", "814 Üçyol-İzmir Şubesi", "869 Köprübaşı-Manisa Şubesi", "884 26 Ağustos-İzmir Şubesi", "902 Şirinyer-İzmir Şubesi", "904 Şemikler-İzmir Şubesi", "911 Altındağ-İzmir Şubesi", "928 Gümüşpala-İzmir Şubesi", "934 Denizbostanlı-İzmir Şubesi", "974 Gümüldür Menderes-İzmir Şubesi", "975 MTK Çarşı-İzmir Şubesi", "999 Çamdibi-İzmir Şubesi", "1000 Gaziemir-İzmir Şubesi", "1021 Beydağ-İzmir Şubesi", "1043 Yeşilyurt-İzmir Şubesi", "1089 Alaybey-İzmir Şubesi", "1203 Üçkuyular-İzmir Şubesi", "1204 Kahramanlar-İzmir Şubesi", "1256 Mesir-Manisa Şubesi", "1333 Efes-İzmir Şubesi", "1403 Kazımdirik-İzmir Şubesi", "1446 Ege Tıp-İzmir Şubesi", "1506 9 Eylül Üniversitesi-İzmir Şubesi", "1533 Fahrettin Altay-İzmir Şubesi", "1625 Güzelbahçe-İzmir Şubesi", "1743 Işıkkent-İzmir Şubesi", "1750 İzmir Para Grup Merkezi", "1751 İzmir Kurumsal Şube", "1768 Atatürk OSB-İzmir Ticari Şube", "1778 Yeni Gıda Çarşısı-İzmir Şubesi", "1815 İzmir Bölge Yöneticiliği-Konak", "1816 İzmir Bölge Yöneticiliği-Karşıyaka", "1840 Manisa Bölge Yöneticiliği", "1903 Girne Bulvarı-İzmir Şubesi", "1938 Manisa Ticari Şube", "1958 Karabağlar-İzmir Ticari Şube", "1961 Bozyaka-İzmir Şubesi", "1972 Ayrancılar-İzmir Şubesi", "1984 Manavkuyu-İzmir Şubesi", "1987 Yenişakran Aliağa-İzmir Şubesi", "1992 Gediz Mahallesi-İzmir Şubesi", "1993 Yıkıkkemer-İzmir Şubesi", "2081 Yeni Girne-İzmir Şubesi", "2088 Şehitler-Manisa Şubesi", "2129 Atakent-İzmir Şubesi", "2137 Osmangazi Bayraklı-İzmir Şubesi", "2152 Ataşehir-İzmir Şubesi", "2159 İzmir Caddesi-Manisa Şubesi", "2170 Hasan Tahsin Buca-İzmir Şubesi", "2267 Kemalpaşa-İzmir Ticari Şube", "2319 Cumhuriyet Salihli-Manisa Şubesi", "2335 Bornova Ata-İzmir Şubesi", "2408 Şehzadeler-Manisa Şubesi", "2425 Seydiköy Gaziemir-İzmir Şubesi", "2436 Menderes Caddesi-İzmir Şubesi", "2474 Çağlak Akhisar-Manisa Şubesi", "2477 Ulukent Menemen-İzmir Şubesi", "2494 4. Sanayi Sitesi-İzmir Şubesi", "2496 Ulus Meydanı Ödemiş-İzmir Şubesi", "2504 7 Eylül Turgutlu-Manisa Şubesi", "2514 Çandarlı Dikili-İzmir Şubesi", "2515 1. Sanayi-İzmir Şubesi", "2566 Ertuğrul Mahallesi Torbalı-İzmir Şubesi", "2630 Yeşilova Bornova-İzmir Şubesi", "2642 Yunusemre-Manisa Şubesi", "2673 Bakırçay Bergama-İzmir Şubesi", "2697 Atatürk Hastanesi-İzmir Şubesi"
     ];
-    let dynamicSubeler = [];
-    
-    // YENİ: ENVANTER LİSTELERİ
     const staticEnvanterler = ["Cüzdan yazıcı","Pc","Tarayıcı","Monitör","Ip telefon","Switch","Router","Sunucu","Nvr","Laptop","Lazer yazıcı","Kamera"];
+    
+    // ARTIK HER ŞEY DİNAMİK VE VERİTABANINDAN ÇEKİLECEK
+    let dynamicSubeler = [];
     let dynamicEnvanterler = [];
     
     // ACTION SHEET DEĞİŞKENLERİ
@@ -428,7 +398,17 @@
     }
 
     function init() {
-        // Envanterleri (Ürünleri) Dinle
+        // --- TEK SEFERLİK BULUT GÖÇÜ ---
+        // Sadece bir kere çalışır ve tüm eski listeyi veritabanına aktarır.
+        db.ref('ayarlar/tam_db_gecisi_v748').once('value', snap => {
+            if(!snap.val()) {
+                staticSubeler.forEach(s => db.ref('ayarlar/sube_listesi').push(s));
+                staticEnvanterler.forEach(e => db.ref('ayarlar/urun_listesi').push(e));
+                db.ref('ayarlar/tam_db_gecisi_v748').set(true);
+            }
+        });
+
+        // Ürünleri (Envanterleri) SADECE Firebase'den Dinle
         db.ref('ayarlar/urun_listesi').on('value', snap => { 
             let list = [];
             snap.forEach(i => list.push({key: i.key, val: i.val()}));
@@ -440,7 +420,7 @@
             }
         });
         
-        // Şubeleri Dinle
+        // Şubeleri SADECE Firebase'den Dinle
         db.ref('ayarlar/sube_listesi').on('value', snap => {
             let list = []; 
             snap.forEach(i => {
@@ -454,7 +434,6 @@
             }
         });
 
-        // Akışı Dinle
         db.ref('transferler/canli_akis').on('value', snap => {
             const container = document.getElementById('akis-container');
             if(!container) return;
@@ -573,7 +552,6 @@
             }
         });
 
-        // Depoları Dinle
         db.ref('depolar').on('value', snap => {
             const c = document.getElementById('depoExList'); c.innerHTML = "";
             snap.forEach(d => {
@@ -598,7 +576,6 @@
         updateSubeCounter();
     }
 
-    // Dokunmatik Basılı Tutma Olayları (Depo Listesi)
     let depoPressTimer, depoDragging = false, depoLongPressed = false;
     document.getElementById('p-depo').addEventListener('touchstart', e => {
         const tr = e.target.closest('.depo-item-row');
@@ -626,7 +603,6 @@
         openAS(u, ref, 'depo', {urun: u, barkod: b});
     });
 
-    // Dokunmatik Basılı Tutma Olayları (Şube Listesi)
     let subePressTimer, subeDragging = false, subeLongPressed = false;
     document.getElementById('modal-list-body').addEventListener('touchstart', e => {
         const item = e.target.closest('.dynamic-sube');
@@ -652,7 +628,6 @@
         openAS(ad, ref, 'sube', {ad: ad});
     });
 
-    // YENİ: Dokunmatik Basılı Tutma Olayları (Envanter Listesi)
     let envPressTimer, envDragging = false, envLongPressed = false;
     document.getElementById('envanter-list-body').addEventListener('touchstart', e => {
         const item = e.target.closest('.dynamic-sube');
@@ -677,7 +652,6 @@
         const ad = item.getAttribute('data-ad');
         openAS(ad, ref, 'envanter', {ad: ad});
     });
-
 
     function openAkisMenu(e, gKey) {
         e.stopPropagation();
@@ -811,7 +785,6 @@
     function openModal() { document.getElementById('sube-modal').style.display = 'block'; filterSubeler(); }
     function closeModal() { document.getElementById('sube-modal').style.display = 'none'; }
     
-    // YENİ: Envanter Yönetim Fonksiyonları
     function openEnvanterModal() { document.getElementById('envanter-modal').style.display = 'block'; renderEnvanterList(); }
     function closeEnvanterModal() { document.getElementById('envanter-modal').style.display = 'none'; }
     
@@ -831,18 +804,12 @@
         const list = document.getElementById('envanter-list-body'); 
         list.innerHTML = "";
         
-        staticEnvanterler.forEach(s => {
-            const d = document.createElement('div'); d.className = "sube-item"; 
-            d.innerHTML = `📦 <span style="flex:1;">${s}</span>`;
-            list.appendChild(d);
-        });
-
         dynamicEnvanterler.forEach(s => {
             const d = document.createElement('div'); 
             d.className = "sube-item dynamic-sube"; 
             d.setAttribute('data-ref', 'ayarlar/urun_listesi/' + s.key);
             d.setAttribute('data-ad', s.val);
-            d.innerHTML = `🟢 <span style="flex:1; font-weight:bold;">${s.val}</span> <span style="color:#aaa; font-size:16px;">⋮</span>`; 
+            d.innerHTML = `📦 <span style="flex:1; font-weight:bold;">${s.val}</span> <span style="color:#aaa; font-size:16px;">⋮</span>`; 
             
             d.onclick = (e) => { 
                 if(envLongPressed) { e.preventDefault(); return; }
@@ -854,8 +821,9 @@
     function checkNewUrun(sel) { 
         if(sel.value === "MANAGE") { 
             openEnvanterModal();
-            // Tıklandıktan sonra listede tekrar ilk normal ürünü göstersin ki ekranda MANAGE yazısı takılı kalmasın
-            sel.value = staticEnvanterler[0]; 
+            if (dynamicEnvanterler.length > 0) {
+                sel.value = dynamicEnvanterler[0].val; 
+            }
         } 
     }
 
@@ -873,17 +841,15 @@
             const old = sel.value;
             let h = `<option value="MANAGE" style="color:#217346; font-weight:bold;">⚙️ ENVANTER EKLE / YÖNET</option>`;
             
-            staticEnvanterler.forEach(u => h += `<option value="${u}">${u}</option>`);
             dynamicEnvanterler.forEach(u => h += `<option value="${u.val}">${u.val}</option>`);
             
             sel.innerHTML = h;
             
-            // Eğer daha önceden seçili olan ürün statik veya dinamik listede varsa onu seç, yoksa ilk ürünü seç
-            let exists = staticEnvanterler.includes(old) || dynamicEnvanterler.some(e => e.val === old);
+            let exists = dynamicEnvanterler.some(e => e.val === old);
             if(old && old !== "MANAGE" && exists) {
                 sel.value = old;
-            } else {
-                sel.value = staticEnvanterler[0]; 
+            } else if (dynamicEnvanterler.length > 0) {
+                sel.value = dynamicEnvanterler[0].val; 
             }
         });
     }
@@ -956,18 +922,12 @@
         const ara = document.getElementById('sube-ara').value.toLocaleUpperCase('tr-TR');
         const list = document.getElementById('modal-list-body'); list.innerHTML = "";
         
-        staticSubeler.filter(s => s.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
-            const d = document.createElement('div'); d.className = "sube-item"; d.innerHTML = `🏢 <span style="flex:1;">${s}</span>`; 
-            d.onclick = () => { document.getElementById('target-sube').value = s; closeModal(); };
-            list.appendChild(d);
-        });
-
         dynamicSubeler.filter(s => s.val.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
             const d = document.createElement('div'); 
             d.className = "sube-item dynamic-sube"; 
             d.setAttribute('data-ref', 'ayarlar/sube_listesi/' + s.key);
             d.setAttribute('data-ad', s.val);
-            d.innerHTML = `🟢 <span style="flex:1; font-weight:bold;">${s.val}</span> <span style="color:#aaa; font-size:16px;">⋮</span>`; 
+            d.innerHTML = `🏢 <span style="flex:1; font-weight:bold;">${s.val}</span> <span style="color:#aaa; font-size:16px;">⋮</span>`; 
             
             d.onclick = (e) => { 
                 if(subeLongPressed) { e.preventDefault(); return; }
@@ -984,7 +944,7 @@
         document.getElementById('personel-name').style.display = isT ? "none" : "block";
     }
     
-    function updateSubeCounter() { const total = staticSubeler.length + dynamicSubeler.length; document.getElementById('target-sube').placeholder = `📍 Hedef Lokasyon Seçin (${total})`; }
+    function updateSubeCounter() { const total = dynamicSubeler.length; document.getElementById('target-sube').placeholder = `📍 Hedef Lokasyon Seçin (${total})`; }
     function tabEx(id, el) { document.querySelectorAll('.app-page').forEach(p => p.style.display = 'none'); document.getElementById('p-'+id).style.display = 'block'; document.querySelectorAll('.excel-nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
 
     function filterAkis() {
