@@ -42,7 +42,8 @@
         .excel-table th, .excel-table td { border-bottom: 1px solid #eee; padding: 10px 6px; text-align: left; overflow: hidden; }
         .excel-table th { background: #f8f9fa; font-size: 11px; font-weight: bold; color: #555; text-transform: uppercase; }
         
-        .depo-row { transition: background 0.2s; }
+        .depo-row { transition: background 0.2s; cursor: pointer; }
+        .depo-row:active { background-color: #f0f0f0; }
         .row-waiting { background-color: #fcf1f2 !important; border-left: 4px solid #dc3545; }
         .row-onay { background-color: #fff8e6 !important; border-left: 4px solid #ff9800; }
         .row-done { background-color: #f1f8f3 !important; border-left: 4px solid #28a745; color: #444; }
@@ -123,6 +124,17 @@
         <button onclick="asEdit()" style="width:100%; padding:15px; margin-bottom:12px; background:#f5f5f5; color:#333; border:1px solid #ddd; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">✏️ Düzenle</button>
         <button onclick="asDelete()" style="width:100%; padding:15px; margin-bottom:12px; background:#ffebee; color:#d32f2f; border:1px solid #ffcdd2; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">🗑️ Sil</button>
         <button onclick="closeAS()" style="width:100%; padding:15px; background:#444; color:white; border:none; border-radius:10px; font-weight:bold; font-size:14px; cursor:pointer;">Vazgeç</button>
+    </div>
+</div>
+
+<div id="barkod-prompt-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:7000; align-items:center; justify-content:center; backdrop-filter: blur(2px);">
+    <div style="background:white; padding:20px; border-radius:12px; width:85%; max-width:320px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out;">
+        <h3 id="bp-title" style="margin-top:0; margin-bottom:15px; color:var(--excell-green); font-size:14px; text-align:center;">Barkod Girin</h3>
+        <input type="number" inputmode="numeric" id="bp-input" style="width:100%; padding:14px; border:2px solid var(--excell-green); border-radius:8px; outline:none; font-size:18px; margin-bottom:20px; text-align:center; font-weight:bold; letter-spacing:1px;" placeholder="Sadece Rakam...">
+        <div style="display:flex; gap:10px;">
+            <button onclick="bpCancel()" style="flex:1; padding:12px; background:#f5f5f5; color:#333; border:1px solid #ddd; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer;">İPTAL</button>
+            <button onclick="bpConfirm()" style="flex:1; padding:12px; background:linear-gradient(135deg, #217346, #165230); color:white; border:none; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer; box-shadow: 0 4px 10px rgba(33,115,70,0.2);">KAYDET</button>
+        </div>
     </div>
 </div>
 
@@ -311,7 +323,10 @@
     
     function asDelete() {
         if(confirm("Bu veriyi kalıcı olarak silmek istediğinize emin misiniz?")) {
-            if (asData.isStatic) {
+            
+            if (asType === 'depo_item') {
+                db.ref('depolar/' + asData.depoKey + '/' + asData.itemKey).remove();
+            } else if (asData.isStatic) {
                 db.ref('ayarlar/ui_islemler').push({ tip: 'sil', kategori: asType, isim: asData.originalName });
             } else {
                 db.ref('ayarlar/' + (asType==='sube' ? 'sube_listesi' : 'urun_listesi') + '/' + asData.key).remove();
@@ -327,10 +342,46 @@
             }
         }
     }
+
+    // YENİ: Barkod Numara Girişi İçin Özel Fonksiyonlar
+    let promptCallback = null;
+    function openNumericPrompt(title, defaultVal, callback) {
+        document.getElementById('bp-title').innerText = title;
+        const inp = document.getElementById('bp-input');
+        inp.value = defaultVal || "";
+        promptCallback = callback;
+        document.getElementById('barkod-prompt-modal').style.display = 'flex';
+        setTimeout(() => inp.focus(), 100);
+    }
+    
+    function bpCancel() { document.getElementById('barkod-prompt-modal').style.display = 'none'; }
+    function bpConfirm() {
+        const val = document.getElementById('bp-input').value.trim();
+        if (val !== "") {
+            document.getElementById('barkod-prompt-modal').style.display = 'none';
+            if(promptCallback) promptCallback(val);
+        } else {
+            alert("Lütfen geçerli bir numara girin.");
+        }
+    }
     
     function asEdit() {
         closeAS();
         setTimeout(() => {
+            if (asType === 'depo_item') {
+                const yeniUrun = prompt("Ürün adını düzenle:", asData.urun);
+                if (yeniUrun !== null && yeniUrun.trim() !== "") {
+                    // YENİ: Normal klavye yerine özel sayı klavyeli ekranı çağırıyoruz
+                    openNumericPrompt("Yeni barkod numarasını girin:", asData.barkod, function(yeniBarkod) {
+                        db.ref('depolar/' + asData.depoKey + '/' + asData.itemKey).update({
+                            urun: yeniUrun.trim(),
+                            barkod: yeniBarkod
+                        });
+                    });
+                }
+                return; 
+            }
+
             const yeni = prompt("Yeni ismi girin:", asData.ad);
             if(yeni && yeni.trim() !== "" && yeni.trim() !== asData.ad) {
                 const yeniAd = yeni.trim();
@@ -376,10 +427,8 @@
         return Array.from(processed.values());
     }
 
-    // YENİ: Firebase Otomatik Oturum Dinleyicisi
     firebase.auth().onAuthStateChanged(user => {
         if (user) {
-            // Kullanıcı zaten giriş yapmış (arka plandan gelmiş veya önceden Beni Hatırla demiş)
             const e = user.email;
             uMail = e;
             const info = aracMap[e] || { ad: e.split('@')[0].toUpperCase(), kod: e.split('@')[0] };
@@ -389,10 +438,8 @@
             document.getElementById('btnAddRow').style.display = "block";
             document.getElementById('userTag').innerHTML = `${uName} <span class="logout-btn" onclick="logout()">ÇIKIŞ</span>`;
             
-            // Giriş ekranını tamamen gizle
             document.getElementById('login-screen').style.display = 'none';
             
-            // Çift satır oluşmasını engellemek için kontrol
             if (document.getElementById('items-container').innerHTML === "") {
                 cleanDatabase(); 
                 init();
@@ -402,10 +449,8 @@
                 }, 600);
             }
         } else {
-            // Kullanıcı giriş yapmamış veya bilerek ÇIKIŞ'a basmış
             document.getElementById('login-screen').style.display = 'flex';
             
-            // Eski usül tarayıcı hafızasında kalan e-posta varsa sadece kutuya doldur
             const savedMail = localStorage.getItem('s016_mail');
             const savedPass = localStorage.getItem('s016_pass');
             if(savedMail && savedPass) {
@@ -473,7 +518,6 @@
         const p = document.getElementById('pass').value;
         const isRem = document.getElementById('rem-check').checked;
 
-        // Firebase'e beni hatırla ayarını kaydet
         const persistence = isRem ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
 
         firebase.auth().setPersistence(persistence).then(() => {
@@ -486,7 +530,6 @@
                 localStorage.removeItem('s016_mail');
                 localStorage.removeItem('s016_pass');
             }
-            // Başarılı olursa onAuthStateChanged otomatik olarak tetiklenip uygulamayı açacak
         }).catch(() => alert("Giriş Hatalı!"));
     }
 
@@ -629,16 +672,55 @@
         });
 
         db.ref('depolar').on('value', snap => {
-            const c = document.getElementById('depoExList'); c.innerHTML = "";
+            const c = document.getElementById('depoExList'); 
+            let fullDepoHtml = "";
             snap.forEach(d => {
+                const depoKey = d.key;
                 let rws = ""; 
                 d.forEach(r => { 
                     const v = r.val(); 
-                    rws += `<tr><td style="font-weight:bold; color:#444;">${v.urun}</td><td style="color:#666;">${v.barkod}</td></tr>`; 
+                    const itemKey = r.key;
+                    const safeUrun = (v.urun||'').replace(/'/g, "\\'");
+                    const safeBarkod = (v.barkod||'').replace(/'/g, "\\'");
+                    
+                    rws += `
+                    <tr class="depo-row" onclick="openDepoItemMenu('${depoKey}', '${itemKey}', '${safeUrun}', '${safeBarkod}')">
+                        <td style="font-weight:bold; color:#444;">${v.urun}</td>
+                        <td style="color:#666;">${v.barkod}</td>
+                        <td style="width: 30px; text-align: center; color: #999; font-size: 16px;">⋮</td>
+                    </tr>`; 
                 });
-                c.innerHTML += `<div class="depo-card"><div style="background:linear-gradient(135deg, #217346, #165230); color:white; padding:12px 15px; font-weight:bold; font-size:13px;">📦 ${d.key} Araç Deposu</div><table class="excel-table">${rws}</table></div>`;
+                
+                fullDepoHtml += `
+                <div class="depo-card">
+                    <div style="background:linear-gradient(135deg, #217346, #165230); color:white; padding:12px 15px; font-weight:bold; font-size:13px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>📦 ${depoKey} Araç Deposu</div>
+                        <button onclick="depoyaManuelEkle('${depoKey}')" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.4); color:white; border-radius:6px; padding:5px 12px; cursor:pointer; font-size:11px; font-weight:bold; transition:0.2s;">➕ EKLE</button>
+                    </div>
+                    <table class="excel-table">${rws}</table>
+                </div>`;
             });
+            c.innerHTML = fullDepoHtml;
         });
+    }
+
+    function openDepoItemMenu(depoKey, itemKey, urun, barkod) {
+        const title = urun + " (" + barkod + ")";
+        const data = { depoKey: depoKey, itemKey: itemKey, urun: urun, barkod: barkod };
+        openAS(title, 'depo_item', data);
+    }
+
+    // YENİ: Ekleme yaparken de numara klavyesini çağırıyoruz
+    function depoyaManuelEkle(depoKey) {
+        const urun = prompt("📦 " + depoKey + " deposu için eklenecek ÜRÜN İSMİ:");
+        if (urun && urun.trim() !== "") {
+            openNumericPrompt(urun.trim() + " için BARKOD NUMARASI:", "", function(barkod) {
+                db.ref('depolar/' + depoKey).push({
+                    urun: urun.trim(),
+                    barkod: barkod
+                });
+            });
+        }
     }
 
     function openAkisMenu(e, gKey) {
@@ -911,4 +993,4 @@
     }
 </script>
 </body>
-</html>
+    </html>
