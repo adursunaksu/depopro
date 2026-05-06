@@ -115,6 +115,7 @@
 
 <div id="akis-context-menu">
     <div class="context-menu-item" onclick="sendAkisMail()">📧 E-Posta Gönder</div>
+    <div class="context-menu-item" onclick="copyToExcel()">📋 Excel'e Kopyala</div>
     <div class="context-menu-item" id="btnDeleteGroup" onclick="deleteAkisGroup()">🗑️ Grubu Sil</div>
 </div>
 
@@ -676,7 +677,6 @@
             const c = document.getElementById('depoExList'); 
             let fullDepoHtml = "";
             
-            // EĞER VERİTABANINDA HİÇ DEPO YOKSA BOŞ SAYFA GÖSTERME
             if (!snap.exists() || snap.numChildren() === 0) {
                 c.innerHTML = '<div style="text-align:center; padding:40px 20px; color:#999; font-size:14px; font-weight:bold;">📦 Henüz hiçbir depoda kayıtlı ürün yok.<br><br>Yukarıdaki butonu kullanarak ilk eklemeyi yapabilirsiniz.</div>';
                 return;
@@ -718,7 +718,6 @@
         openAS(title, 'depo_item', data);
     }
 
-    // YENİ: Hem genel buton için hem de depo içi buton için ortak ekleme fonksiyonları
     function globalDepoyaEkle() {
         const depoAd = prompt("Hangi Araç Deposuna ürün eklenecek?\n(Kendi deponuz için varsayılanı bırakabilirsiniz)", uFullKey);
         if(depoAd && depoAd.trim() !== "") {
@@ -754,6 +753,53 @@
         
         if ("vibrate" in navigator) navigator.vibrate(50);
         setTimeout(() => { document.addEventListener('click', function closeMenu(ev) { if (!ev.target.closest('#akis-context-menu')) { menu.style.display = 'none'; document.removeEventListener('click', closeMenu); } }); }, 10);
+    }
+
+    // YENİ FONKSİYON: Arızalı ürünleri Excel panosuna formatlayarak kopyalar
+    async function copyToExcel() {
+        document.getElementById('akis-context-menu').style.display = 'none';
+        if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
+        
+        const groupData = currentAkisData[selectedAkisGKey];
+        let excelRows = [];
+        
+        const today = new Date();
+        const tarihStr = today.toLocaleDateString('tr-TR', {day: '2-digit', month: '2-digit', year: 'numeric'});
+        
+        groupData.forEach(item => {
+            const d = item.d;
+            if(d.tip === "GİRİŞ" || d.tip === "AL") {
+                const urun = d.urun || "";
+                const barkod = d.barkod || "";
+                const kpNo = d.kp || "";
+                
+                // Excel sıralamasına göre tab (\t) boşlukları bırakıyoruz:
+                // B Sütunu: urun
+                // C Sütunu: barkod
+                // D Sütunu: (BOŞ GEÇİLİYOR - Seri No)
+                // E Sütunu: kpNo
+                // F Sütunu: (BOŞ GEÇİLİYOR - Gönderildiği Yer)
+                // G Sütunu: tarihStr
+                // H Sütunu: Adaksu
+                const row = `${urun}\t${barkod}\t\t${kpNo}\t\t${tarihStr}\tAdaksu`;
+                excelRows.push(row);
+            }
+        });
+
+        if(excelRows.length === 0) {
+            alert("Bu grupta kopyalanacak 'Arızalı' (Giriş) cihaz bulunamadı.");
+            return;
+        }
+
+        const finalString = excelRows.join('\n');
+
+        try { 
+            await navigator.clipboard.writeText(finalString); 
+            alert("✅ Arızalı cihaz verileri Excel formatında kopyalandı!\n\nŞimdi Excel'de B sütununa (MODEL hücresine) tıklayıp doğrudan 'Yapıştır' diyebilirsiniz."); 
+        } 
+        catch (err) { 
+            alert("Kopyalama başarısız oldu. Tarayıcınız pano erişimine izin vermiyor olabilir."); 
+        }
     }
 
     async function sendAkisMail() {
