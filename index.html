@@ -187,6 +187,9 @@
     </div>
     
     <div id="p-depo" class="app-page" style="display:none;">
+        <div style="padding:10px 0; margin-bottom:10px; position:sticky; top:0; z-index:10; background: var(--bg);">
+            <button onclick="globalDepoyaEkle()" style="width:100%; padding:14px; background:linear-gradient(135deg, #217346, #165230); color:white; border:none; border-radius:10px; font-weight:bold; font-size:13px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor:pointer;">➕ YENİ DEPO / ÜRÜN EKLE</button>
+        </div>
         <div id="depoExList"></div>
     </div>
 </div>
@@ -343,7 +346,6 @@
         }
     }
 
-    // YENİ: Barkod Numara Girişi İçin Özel Fonksiyonlar
     let promptCallback = null;
     function openNumericPrompt(title, defaultVal, callback) {
         document.getElementById('bp-title').innerText = title;
@@ -371,7 +373,6 @@
             if (asType === 'depo_item') {
                 const yeniUrun = prompt("Ürün adını düzenle:", asData.urun);
                 if (yeniUrun !== null && yeniUrun.trim() !== "") {
-                    // YENİ: Normal klavye yerine özel sayı klavyeli ekranı çağırıyoruz
                     openNumericPrompt("Yeni barkod numarasını girin:", asData.barkod, function(yeniBarkod) {
                         db.ref('depolar/' + asData.depoKey + '/' + asData.itemKey).update({
                             urun: yeniUrun.trim(),
@@ -674,14 +675,21 @@
         db.ref('depolar').on('value', snap => {
             const c = document.getElementById('depoExList'); 
             let fullDepoHtml = "";
+            
+            // EĞER VERİTABANINDA HİÇ DEPO YOKSA BOŞ SAYFA GÖSTERME
+            if (!snap.exists() || snap.numChildren() === 0) {
+                c.innerHTML = '<div style="text-align:center; padding:40px 20px; color:#999; font-size:14px; font-weight:bold;">📦 Henüz hiçbir depoda kayıtlı ürün yok.<br><br>Yukarıdaki butonu kullanarak ilk eklemeyi yapabilirsiniz.</div>';
+                return;
+            }
+
             snap.forEach(d => {
                 const depoKey = d.key;
                 let rws = ""; 
                 d.forEach(r => { 
                     const v = r.val(); 
                     const itemKey = r.key;
-                    const safeUrun = (v.urun||'').replace(/'/g, "\\'");
-                    const safeBarkod = (v.barkod||'').replace(/'/g, "\\'");
+                    const safeUrun = (v.urun||'').replace(/"/g, '&quot;').replace(/'/g, "\\'");
+                    const safeBarkod = (v.barkod||'').replace(/"/g, '&quot;').replace(/'/g, "\\'");
                     
                     rws += `
                     <tr class="depo-row" onclick="openDepoItemMenu('${depoKey}', '${itemKey}', '${safeUrun}', '${safeBarkod}')">
@@ -710,7 +718,14 @@
         openAS(title, 'depo_item', data);
     }
 
-    // YENİ: Ekleme yaparken de numara klavyesini çağırıyoruz
+    // YENİ: Hem genel buton için hem de depo içi buton için ortak ekleme fonksiyonları
+    function globalDepoyaEkle() {
+        const depoAd = prompt("Hangi Araç Deposuna ürün eklenecek?\n(Kendi deponuz için varsayılanı bırakabilirsiniz)", uFullKey);
+        if(depoAd && depoAd.trim() !== "") {
+            depoyaManuelEkle(depoAd.trim());
+        }
+    }
+
     function depoyaManuelEkle(depoKey) {
         const urun = prompt("📦 " + depoKey + " deposu için eklenecek ÜRÜN İSMİ:");
         if (urun && urun.trim() !== "") {
