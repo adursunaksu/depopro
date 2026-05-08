@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v75.7 (Hibrit & Çevrimdışı)</title>
+    <title>S016 Depo Takip v75.8 (Tam Hibrit)</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -163,7 +163,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v75.7</div>
+    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v75.8</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -346,6 +346,8 @@
             if(asType === 'urun') {
                 updateAllSelects(); 
             }
+            // İşlem sonrası PC için zorla yenileme
+            setTimeout(loadDataREST, 500);
         }
     }
 
@@ -380,7 +382,7 @@
                         db.ref('depolar/' + asData.depoKey + '/' + asData.itemKey).update({
                             urun: yeniUrun.trim(),
                             barkod: yeniBarkod
-                        });
+                        }).then(loadDataREST);
                     });
                 }
                 return; 
@@ -390,9 +392,9 @@
             if(yeni && yeni.trim() !== "" && yeni.trim() !== asData.ad) {
                 const yeniAd = yeni.trim();
                 if (asData.isStatic) {
-                    db.ref('ayarlar/ui_islemler').push({ tip: 'duzenle', kategori: asType, eski: asData.originalName, yeni: yeniAd });
+                    db.ref('ayarlar/ui_islemler').push({ tip: 'duzenle', kategori: asType, eski: asData.originalName, yeni: yeniAd }).then(loadDataREST);
                 } else {
-                    db.ref('ayarlar/' + (asType==='sube' ? 'sube_listesi' : 'urun_listesi') + '/' + asData.key).set(yeniAd);
+                    db.ref('ayarlar/' + (asType==='sube' ? 'sube_listesi' : 'urun_listesi') + '/' + asData.key).set(yeniAd).then(loadDataREST);
                 }
             }
         }, 300);
@@ -471,32 +473,30 @@
     // ----------------------------------------------------------------------------------
 
     function processOfflineQueue() {
-        if(!navigator.onLine) return; // Çevrimdışıysa deneme
+        if(!navigator.onLine) return; 
         
         let offlineList = JSON.parse(localStorage.getItem('s016_offline_q') || '[]');
         if(offlineList.length === 0) return;
 
         let pending = [];
         let promises = offlineList.map(item => {
-            // Sadece Akış eklemeleri için yapıldı
             return db.ref(item.path).push(item.data).catch(() => {
-                pending.push(item); // İnternet tam çekmediyse listeye geri koy
+                pending.push(item); 
             });
         });
 
         Promise.all(promises).then(() => {
             localStorage.setItem('s016_offline_q', JSON.stringify(pending));
             if (pending.length < offlineList.length) {
-                loadDataREST(); // Başarıyla gönderilenler varsa listeyi tazele
+                loadDataREST(); 
             }
         });
     }
 
-    // Cihaz internete her bağlandığında beklemedeki verileri Firebase'e atar
     window.addEventListener('online', processOfflineQueue);
 
     async function loadDataREST() {
-        // Bu fonksiyon İvanti (PC) kalkanını aşmak için standart HTTP trafiği kullanır.
+        // İvanti kalkanını tamamen aşmak için Ayarlar (Şube, Ürün) da dahil her şeyi HTTPS üzerinden çekeriz
         if (!firebase.auth().currentUser) return;
         try {
             const token = await firebase.auth().currentUser.getIdToken();
@@ -512,13 +512,52 @@
             const depoData = await resDepo.json();
             renderDepo(depoData);
 
+            // 3. Ayarlar Verilerini Çek (Şubeler, Ürünler, UI İşlemleri - PC İÇİN KRİTİK GÜNCELLEME)
+            const resAyarlar = await fetch(`${baseUrl}/ayarlar.json?auth=${token}`);
+            const ayarlarData = await resAyarlar.json();
+            
+            if (ayarlarData) {
+                // UI İşlemleri (Silme ve Düzenlemeler)
+                uiIslemler = [];
+                if (ayarlarData.ui_islemler) {
+                    Object.keys(ayarlarData.ui_islemler).forEach(k => {
+                        uiIslemler.push({...ayarlarData.ui_islemler[k], key: k});
+                    });
+                }
+
+                // Dinamik Ürün Listesi
+                dynamicEnvanterler = [];
+                if (ayarlarData.urun_listesi) {
+                    Object.keys(ayarlarData.urun_listesi).forEach(k => {
+                        let val = ayarlarData.urun_listesi[k];
+                        let ad = typeof val === 'string' ? val : val.ad;
+                        if (ad) dynamicEnvanterler.push({key: k, ad: ad});
+                    });
+                }
+
+                // Dinamik Şube Listesi
+                dynamicSubeler = [];
+                if (ayarlarData.sube_listesi) {
+                    Object.keys(ayarlarData.sube_listesi).forEach(k => {
+                        let val = ayarlarData.sube_listesi[k];
+                        let ad = typeof val === 'string' ? val : val.ad;
+                        if (ad) dynamicSubeler.push({key: k, ad: ad});
+                    });
+                }
+
+                // Ekrana Yansıt
+                updateAllSelects();
+                updateSubeCounter();
+                if(document.getElementById('sube-modal').style.display === 'block') filterSubeler(); 
+                if(document.getElementById('envanter-modal').style.display === 'block') renderEnvanterList();
+            }
+
         } catch (e) {
             console.error("Bilgisayar ortamı veri çekme hatası (Ivanti kısıtlaması olabilir):", e);
         }
     }
 
     function init() {
-        // Uygulama açılır açılmaz hafızadaki verileri buluta pompalamayı dener
         processOfflineQueue();
 
         // MOBİL İÇİN CANLI (REALTIME) TÜNELLER
@@ -560,7 +599,7 @@
             renderDepo(snap.val());
         });
 
-        // BİLGİSAYAR (IVANTI) İÇİN HİBRİT GÜNCELLEME (8 Saniyede Bir Arka Planda Sessizce Çeker)
+        // BİLGİSAYAR (IVANTI) İÇİN HİBRİT GÜNCELLEME
         loadDataREST();
         setInterval(loadDataREST, 8000); 
     }
@@ -610,12 +649,12 @@
                         ? `<button class="btn-status bg-onay" onclick="approveTransfer('${key}')">KABUL ET</button>`
                         : `<span style="color:orange; font-weight:bold;">ONAYDA</span>`;
                 } else {
-                    actionHtml = `<button class="btn-status ${isD?'bg-done':'bg-waiting'}" onclick="db.ref('transferler/canli_akis/${key}').update({status:('${d.status}'==='BEKLEMEDE'?'YAPILDI':'BEKLEMEDE')})">${isD?'YAPILDI':'BEKLİYOR'}</button>`;
+                    actionHtml = `<button class="btn-status ${isD?'bg-done':'bg-waiting'}" onclick="db.ref('transferler/canli_akis/${key}').update({status:('${d.status}'==='BEKLEMEDE'?'YAPILDI':'BEKLEMEDE')}).then(loadDataREST)">${isD?'YAPILDI':'BEKLİYOR'}</button>`;
                 }
 
                 let kpCell = isPassiveKP 
                     ? `<input type="text" class="kp-input-large" readonly style="background:#f5f5f5; border:none; color:#777;" value="${d.kp||''}">`
-                    : `<div class="kp-wrapper"><input type="text" id="kp-${key}" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})" value="${d.kp||''}"><span class="magnifier-btn" onclick="startScannerEx('kp-${key}')">🔍</span></div>`;
+                    : `<div class="kp-wrapper"><input type="text" id="kp-${key}" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value}).then(loadDataREST)" value="${d.kp||''}"><span class="magnifier-btn" onclick="startScannerEx('kp-${key}')">🔍</span></div>`;
 
                 const checkMark = isD ? ' <span style="font-size:12px;">✅</span>' : '';
 
@@ -703,7 +742,7 @@
                         input.value = decodedText;
                         if(targetInputId.startsWith('kp-')) {
                             const dbKey = targetInputId.replace('kp-', '');
-                            db.ref('transferler/canli_akis/' + dbKey).update({kp: decodedText});
+                            db.ref('transferler/canli_akis/' + dbKey).update({kp: decodedText}).then(loadDataREST);
                         }
                     }
                     stopScannerEx();
@@ -810,7 +849,7 @@
                 db.ref('depolar/' + depoKey).push({
                     urun: urun.trim(),
                     barkod: barkod
-                });
+                }).then(loadDataREST);
             });
         }
     }
@@ -898,7 +937,9 @@
         if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
         
         if(confirm("Bu gruba ait tüm işlemleri kalıcı olarak silmek istediğinize emin misiniz?")) {
-            currentAkisData[selectedAkisGKey].forEach(item => { db.ref('transferler/canli_akis/' + item.key).remove(); });
+            currentAkisData[selectedAkisGKey].forEach(item => { 
+                db.ref('transferler/canli_akis/' + item.key).remove().then(loadDataREST); 
+            });
         }
     }
 
@@ -938,6 +979,7 @@
             db.ref('ayarlar/sube_listesi').push(trimmed).then(() => {
                 document.getElementById('sube-ara').value = trimmed;
                 isAddingSube = false;
+                loadDataREST(); // PC için zorla yenile
             }).catch(() => { isAddingSube = false; });
         } 
     }
@@ -967,6 +1009,7 @@
             db.ref('ayarlar/urun_listesi').push(trimmed).then(() => { 
                 document.getElementById('env-ara').value = trimmed;
                 isAddingEnv = false; 
+                loadDataREST(); // PC için zorla yenile
             }).catch(() => { isAddingEnv = false; });
         }
     }
@@ -981,7 +1024,7 @@
             const d = s.val();
             db.ref('depolar/' + d.gonderen_kod).once('value', ds => { ds.forEach(item => { if(item.val().barkod === d.barkod) item.ref.remove(); }); });
             db.ref('depolar/' + uFullKey).push({ urun: d.urun, barkod: d.barkod });
-            db.ref('transferler/canli_akis/' + key).update({status: "YAPILDI"});
+            db.ref('transferler/canli_akis/' + key).update({status: "YAPILDI"}).then(loadDataREST);
         });
     }
 
@@ -1135,4 +1178,4 @@
     }
 </script>
 </body>
-    </html>
+</html>
