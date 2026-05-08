@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>S016 Depo Takip v75.6 (Otomatik Giriş)</title>
+    <title>S016 Depo Takip v75.7 (Hibrit & Çevrimdışı)</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
@@ -141,8 +141,8 @@
 
 <div id="sube-modal">
     <div class="modal-box">
-        <div class="modal-search"><input type="text" id="sube-ara" placeholder="Şube ara (Kod veya İsim)..." oninput="filterSubeler()"></div>
-        <div class="add-btn-list" onclick="manualAdd()">➕ LİSTEDE OLMAYAN ŞUBEYİ EKLE</div>
+        <div class="modal-search"><input type="text" id="sube-ara" placeholder="Lokasyon ara (Kod veya İsim)..." oninput="filterSubeler()"></div>
+        <div class="add-btn-list" onclick="manualAdd()">➕ LİSTEDE OLMAYAN LOKASYONU EKLE</div>
         <div class="modal-list" id="modal-list-body"></div>
         <button onclick="closeModal()" style="padding:16px; background:#444; color:white; border:none; font-weight:bold; font-size:14px; cursor:pointer;">VAZGEÇ</button>
     </div>
@@ -163,7 +163,7 @@
 </div>
 
 <div class="excel-bar">
-    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v75.6</div>
+    <div style="font-weight:bold; letter-spacing: 1px; font-size: 13px;">S016 DEPO TAKİP v75.7</div>
     <div class="user-cell" id="userTag">...</div>
 </div>
 
@@ -181,15 +181,17 @@
     </div>
 
     <div id="p-akis" class="app-page" style="display:none;">
-        <div style="padding:10px 0; margin-bottom:10px; position:sticky; top:0; z-index:10; background: var(--bg);">
-            <input type="text" id="akis-ara" placeholder="🔍 Lokasyon, Ürün, Barkod veya Personel Ara..." oninput="filterAkis()" style="width:100%; padding:14px; border:none; border-radius:10px; font-size:13px; outline:none; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+        <div style="padding:10px 0; margin-bottom:10px; position:sticky; top:0; z-index:10; background: var(--bg); display: flex; gap: 10px;">
+            <input type="text" id="akis-ara" placeholder="🔍 Lokasyon, Ürün, Barkod veya Personel Ara..." oninput="filterAkis()" style="flex:1; padding:14px; border:none; border-radius:10px; font-size:13px; outline:none; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <button onclick="loadDataREST()" style="padding:0 15px; background:white; color:var(--excell-green); border:none; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.05); font-size:18px; cursor:pointer;" title="PC'de Yenile">🔄</button>
         </div>
         <div id="akis-container"></div>
     </div>
     
     <div id="p-depo" class="app-page" style="display:none;">
-        <div style="padding:10px 0; margin-bottom:10px; position:sticky; top:0; z-index:10; background: var(--bg);">
-            <button onclick="globalDepoyaEkle()" style="width:100%; padding:14px; background:linear-gradient(135deg, #217346, #165230); color:white; border:none; border-radius:10px; font-weight:bold; font-size:13px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor:pointer;">➕ YENİ DEPO / ÜRÜN EKLE</button>
+        <div style="padding:10px 0; margin-bottom:10px; position:sticky; top:0; z-index:10; background: var(--bg); display: flex; gap: 10px;">
+            <button onclick="globalDepoyaEkle()" style="flex:1; padding:14px; background:linear-gradient(135deg, #217346, #165230); color:white; border:none; border-radius:10px; font-weight:bold; font-size:13px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor:pointer;">➕ YENİ DEPO / ÜRÜN EKLE</button>
+            <button onclick="loadDataREST()" style="padding:0 15px; background:white; color:var(--excell-green); border:none; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.05); font-size:18px; cursor:pointer;" title="PC'de Yenile">🔄</button>
         </div>
         <div id="depoExList"></div>
     </div>
@@ -459,12 +461,234 @@
                 document.getElementById('email').value = savedMail;
                 document.getElementById('pass').value = savedPass;
                 document.getElementById('rem-check').checked = true;
-                
-                // OTOMATİK GİRİŞ İÇİN EKSİK OLAN TETİKLEYİCİ
                 login();
             }
         }
     });
+
+    // ----------------------------------------------------------------------------------
+    // HİBRİT YAPI: OFFLINE FIRST (Cevrimdışı Kuyruk) & REST API (PC İzleme)
+    // ----------------------------------------------------------------------------------
+
+    function processOfflineQueue() {
+        if(!navigator.onLine) return; // Çevrimdışıysa deneme
+        
+        let offlineList = JSON.parse(localStorage.getItem('s016_offline_q') || '[]');
+        if(offlineList.length === 0) return;
+
+        let pending = [];
+        let promises = offlineList.map(item => {
+            // Sadece Akış eklemeleri için yapıldı
+            return db.ref(item.path).push(item.data).catch(() => {
+                pending.push(item); // İnternet tam çekmediyse listeye geri koy
+            });
+        });
+
+        Promise.all(promises).then(() => {
+            localStorage.setItem('s016_offline_q', JSON.stringify(pending));
+            if (pending.length < offlineList.length) {
+                loadDataREST(); // Başarıyla gönderilenler varsa listeyi tazele
+            }
+        });
+    }
+
+    // Cihaz internete her bağlandığında beklemedeki verileri Firebase'e atar
+    window.addEventListener('online', processOfflineQueue);
+
+    async function loadDataREST() {
+        // Bu fonksiyon İvanti (PC) kalkanını aşmak için standart HTTP trafiği kullanır.
+        if (!firebase.auth().currentUser) return;
+        try {
+            const token = await firebase.auth().currentUser.getIdToken();
+            const baseUrl = "https://depotakippro-default-rtdb.europe-west1.firebasedatabase.app";
+            
+            // 1. Akış Verilerini Çek
+            const resAkis = await fetch(`${baseUrl}/transferler/canli_akis.json?auth=${token}`);
+            const akisData = await resAkis.json();
+            renderAkis(akisData);
+
+            // 2. Depo Verilerini Çek
+            const resDepo = await fetch(`${baseUrl}/depolar.json?auth=${token}`);
+            const depoData = await resDepo.json();
+            renderDepo(depoData);
+
+        } catch (e) {
+            console.error("Bilgisayar ortamı veri çekme hatası (Ivanti kısıtlaması olabilir):", e);
+        }
+    }
+
+    function init() {
+        // Uygulama açılır açılmaz hafızadaki verileri buluta pompalamayı dener
+        processOfflineQueue();
+
+        // MOBİL İÇİN CANLI (REALTIME) TÜNELLER
+        db.ref('ayarlar/ui_islemler').on('value', snap => {
+            uiIslemler = [];
+            snap.forEach(i => uiIslemler.push({...i.val(), key: i.key}));
+            updateAllSelects(); updateSubeCounter();
+            if(document.getElementById('sube-modal').style.display === 'block') filterSubeler(); 
+            if(document.getElementById('envanter-modal').style.display === 'block') renderEnvanterList();
+        });
+
+        db.ref('ayarlar/urun_listesi').on('value', snap => { 
+            let list = [];
+            snap.forEach(i => {
+                let val = i.val(); let ad = typeof val === 'string' ? val : val.ad;
+                if(ad) list.push({key: i.key, ad: ad});
+            });
+            dynamicEnvanterler = list;
+            updateAllSelects();
+            if(document.getElementById('envanter-modal').style.display === 'block') renderEnvanterList();
+        });
+        
+        db.ref('ayarlar/sube_listesi').on('value', snap => {
+            let list = []; 
+            snap.forEach(i => {
+                let val = i.val(); let ad = typeof val === 'string' ? val : val.ad;
+                if(ad) list.push({key: i.key, ad: ad});
+            });
+            dynamicSubeler = list; 
+            updateSubeCounter();
+            if(document.getElementById('sube-modal').style.display === 'block') filterSubeler(); 
+        });
+
+        db.ref('transferler/canli_akis').on('value', snap => {
+            renderAkis(snap.val());
+        });
+
+        db.ref('depolar').on('value', snap => {
+            renderDepo(snap.val());
+        });
+
+        // BİLGİSAYAR (IVANTI) İÇİN HİBRİT GÜNCELLEME (8 Saniyede Bir Arka Planda Sessizce Çeker)
+        loadDataREST();
+        setInterval(loadDataREST, 8000); 
+    }
+
+    // Arayüz Çizim Fonksiyonları (Hem Canlı hem PC akışı ortak kullanır)
+    function renderAkis(data) {
+        const container = document.getElementById('akis-container');
+        if(!container) return;
+        
+        if(!data || Object.keys(data).length === 0){
+            container.innerHTML = "<div style='text-align:center; padding:30px 20px; color:#999; font-weight:bold; font-size:14px;'>📋 Henüz hiçbir hareket bulunmuyor.</div>";
+            currentAkisData = {};
+            return;
+        }
+
+        const groupedData = {}; const groupOrder = [];
+        
+        Object.keys(data).forEach(key => {
+            const d = data[key];
+            const tarih = d.tarih || ""; const saat = d.saat || "";
+            const groupKey = d.yer + "|||" + tarih + "|||" + saat;
+            
+            if(!groupedData[groupKey]) groupedData[groupKey] = [];
+            groupedData[groupKey].unshift({ key, d });
+            const idx = groupOrder.indexOf(groupKey);
+            if(idx > -1) groupOrder.splice(idx, 1);
+            groupOrder.unshift(groupKey);
+        });
+
+        currentAkisData = groupedData;
+        let fullHtml = "";
+
+        groupOrder.forEach(gKey => {
+            const parts = gKey.split("|||");
+            const yer = parts[0]; const tarih = parts[1]; const saat = parts[2];
+            const gonderenIsmi = groupedData[gKey][0].d.gonderen || "Bilinmiyor";
+
+            let rowsHtml = "";
+            groupedData[gKey].forEach(item => {
+                const key = item.key; const d = item.d;
+                const isD = d.status === "YAPILDI"; const isOnay = d.status === "ONAY BEKLIYOR";
+                const isReceiver = d.yer === uFullKey; const isPassiveKP = (d.tip === "ÇIKIŞ" || d.tip === "VER");
+
+                let actionHtml = "";
+                if(isOnay) {
+                    actionHtml = isReceiver 
+                        ? `<button class="btn-status bg-onay" onclick="approveTransfer('${key}')">KABUL ET</button>`
+                        : `<span style="color:orange; font-weight:bold;">ONAYDA</span>`;
+                } else {
+                    actionHtml = `<button class="btn-status ${isD?'bg-done':'bg-waiting'}" onclick="db.ref('transferler/canli_akis/${key}').update({status:('${d.status}'==='BEKLEMEDE'?'YAPILDI':'BEKLEMEDE')})">${isD?'YAPILDI':'BEKLİYOR'}</button>`;
+                }
+
+                let kpCell = isPassiveKP 
+                    ? `<input type="text" class="kp-input-large" readonly style="background:#f5f5f5; border:none; color:#777;" value="${d.kp||''}">`
+                    : `<div class="kp-wrapper"><input type="text" id="kp-${key}" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})" value="${d.kp||''}"><span class="magnifier-btn" onclick="startScannerEx('kp-${key}')">🔍</span></div>`;
+
+                const checkMark = isD ? ' <span style="font-size:12px;">✅</span>' : '';
+
+                rowsHtml += `
+                <tr class="${isD?'row-done':(isOnay?'row-onay':'row-waiting')}">
+                    <td style="width:30%;"><b>${d.urun}</b><br><small style="color:#666;">${d.barkod}${checkMark}</small></td>
+                    <td style="width:20%; font-weight:bold; color:#444;">${d.personel || '-'}</td>
+                    <td style="width:25%;">${kpCell}</td>
+                    <td style="width:25%;">${actionHtml}</td>
+                </tr>`;
+            });
+
+            fullHtml += `
+            <div class="akis-card">
+                <div style="background:linear-gradient(135deg, #217346, #165230); color:white; padding:10px 15px; font-weight:bold; font-size:12px; display:flex; justify-content:space-between; align-items:center; user-select:none;">
+                    <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
+                        <span style="font-size: 13px;">🏢 ${yer}</span>
+                        <span style="font-size:10px; font-weight:normal; opacity:0.85;">📅 ${tarih} - ⏰ ${saat}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                            <span style="font-size:9px; opacity:0.8; font-weight:normal; letter-spacing:0.5px;">TEKNİKER</span>
+                            <span style="font-size:12px;">${gonderenIsmi}</span>
+                        </div>
+                        <button class="btn-circle" onclick="openAkisMenu(event, '${gKey}')">⋮</button>
+                    </div>
+                </div>
+                <table class="excel-table"><thead><tr><th style="width:30%;">Ürün-Barkod</th><th style="width:20%;">Personel</th><th style="width:25%;">KP NO</th><th style="width:25%;">Transfer</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+            </div>`;
+        });
+        
+        container.innerHTML = fullHtml;
+        if(document.getElementById('akis-ara') && document.getElementById('akis-ara').value !== '') filterAkis();
+    }
+
+    function renderDepo(data) {
+        const c = document.getElementById('depoExList'); 
+        let fullDepoHtml = "";
+        
+        if (!data || Object.keys(data).length === 0) {
+            c.innerHTML = '<div style="text-align:center; padding:40px 20px; color:#999; font-size:14px; font-weight:bold;">📦 Henüz hiçbir depoda kayıtlı ürün yok.<br><br>Yukarıdaki butonu kullanarak ilk eklemeyi yapabilirsiniz.</div>';
+            return;
+        }
+
+        Object.keys(data).forEach(depoKey => {
+            const depoItems = data[depoKey];
+            let rws = ""; 
+            if(typeof depoItems === 'object') {
+                Object.keys(depoItems).forEach(itemKey => { 
+                    const v = depoItems[itemKey]; 
+                    const safeUrun = (v.urun||'').replace(/"/g, '&quot;').replace(/'/g, "\\'");
+                    const safeBarkod = (v.barkod||'').replace(/"/g, '&quot;').replace(/'/g, "\\'");
+                    
+                    rws += `
+                    <tr class="depo-row" onclick="openDepoItemMenu('${depoKey}', '${itemKey}', '${safeUrun}', '${safeBarkod}')">
+                        <td style="font-weight:bold; color:#444;">${v.urun}</td>
+                        <td style="color:#666;">${v.barkod}</td>
+                        <td style="width: 30px; text-align: center; color: #999; font-size: 16px;">⋮</td>
+                    </tr>`; 
+                });
+            }
+            
+            fullDepoHtml += `
+            <div class="depo-card">
+                <div style="background:linear-gradient(135deg, #217346, #165230); color:white; padding:12px 15px; font-weight:bold; font-size:13px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>📦 ${depoKey} Araç Deposu</div>
+                    <button onclick="depoyaManuelEkle('${depoKey}')" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.4); color:white; border-radius:6px; padding:5px 12px; cursor:pointer; font-size:11px; font-weight:bold; transition:0.2s;">➕ EKLE</button>
+                </div>
+                <table class="excel-table">${rws}</table>
+            </div>`;
+        });
+        c.innerHTML = fullDepoHtml;
+    }
 
     function startScannerEx(targetInputId) {
         document.getElementById('camera-modal').style.display = 'flex';
@@ -563,155 +787,6 @@
                 let ad = typeof val === 'string' ? val : val.ad;
                 if(ad && seenProducts.has(ad.trim().toLocaleUpperCase('tr-TR'))) { child.ref.remove(); }
             });
-        });
-    }
-
-    function init() {
-        db.ref('ayarlar/ui_islemler').on('value', snap => {
-            uiIslemler = [];
-            snap.forEach(i => uiIslemler.push({...i.val(), key: i.key}));
-            updateAllSelects(); updateSubeCounter();
-            if(document.getElementById('sube-modal').style.display === 'block') filterSubeler(); 
-            if(document.getElementById('envanter-modal').style.display === 'block') renderEnvanterList();
-        });
-
-        db.ref('ayarlar/urun_listesi').on('value', snap => { 
-            let list = [];
-            snap.forEach(i => {
-                let val = i.val(); let ad = typeof val === 'string' ? val : val.ad;
-                if(ad) list.push({key: i.key, ad: ad});
-            });
-            dynamicEnvanterler = list;
-            updateAllSelects();
-            if(document.getElementById('envanter-modal').style.display === 'block') renderEnvanterList();
-        });
-        
-        db.ref('ayarlar/sube_listesi').on('value', snap => {
-            let list = []; 
-            snap.forEach(i => {
-                let val = i.val(); let ad = typeof val === 'string' ? val : val.ad;
-                if(ad) list.push({key: i.key, ad: ad});
-            });
-            dynamicSubeler = list; 
-            updateSubeCounter();
-            if(document.getElementById('sube-modal').style.display === 'block') filterSubeler(); 
-        });
-
-        db.ref('transferler/canli_akis').on('value', snap => {
-            const container = document.getElementById('akis-container');
-            if(!container) return;
-            
-            const groupedData = {}; const groupOrder = [];
-            
-            snap.forEach(i => {
-                const d = i.val(); const key = i.key;
-                const tarih = d.tarih || ""; const saat = d.saat || "";
-                const groupKey = d.yer + "|||" + tarih + "|||" + saat;
-                
-                if(!groupedData[groupKey]) groupedData[groupKey] = [];
-                groupedData[groupKey].unshift({ key, d });
-                const idx = groupOrder.indexOf(groupKey);
-                if(idx > -1) groupOrder.splice(idx, 1);
-                groupOrder.unshift(groupKey);
-            });
-
-            currentAkisData = groupedData;
-            let fullHtml = "";
-
-            groupOrder.forEach(gKey => {
-                const parts = gKey.split("|||");
-                const yer = parts[0]; const tarih = parts[1]; const saat = parts[2];
-                const gonderenIsmi = groupedData[gKey][0].d.gonderen || "Bilinmiyor";
-
-                let rowsHtml = "";
-                groupedData[gKey].forEach(item => {
-                    const key = item.key; const d = item.d;
-                    const isD = d.status === "YAPILDI"; const isOnay = d.status === "ONAY BEKLIYOR";
-                    const isReceiver = d.yer === uFullKey; const isPassiveKP = (d.tip === "ÇIKIŞ" || d.tip === "VER");
-
-                    let actionHtml = "";
-                    if(isOnay) {
-                        actionHtml = isReceiver 
-                            ? `<button class="btn-status bg-onay" onclick="approveTransfer('${key}')">KABUL ET</button>`
-                            : `<span style="color:orange; font-weight:bold;">ONAYDA</span>`;
-                    } else {
-                        actionHtml = `<button class="btn-status ${isD?'bg-done':'bg-waiting'}" onclick="db.ref('transferler/canli_akis/${key}').update({status:('${d.status}'==='BEKLEMEDE'?'YAPILDI':'BEKLEMEDE')})">${isD?'YAPILDI':'BEKLİYOR'}</button>`;
-                    }
-
-                    let kpCell = isPassiveKP 
-                        ? `<input type="text" class="kp-input-large" readonly style="background:#f5f5f5; border:none; color:#777;" value="${d.kp||''}">`
-                        : `<div class="kp-wrapper"><input type="text" id="kp-${key}" class="kp-input-large" onblur="db.ref('transferler/canli_akis/${key}').update({kp:this.value})" value="${d.kp||''}"><span class="magnifier-btn" onclick="startScannerEx('kp-${key}')">🔍</span></div>`;
-
-                    const checkMark = isD ? ' <span style="font-size:12px;">✅</span>' : '';
-
-                    rowsHtml += `
-                    <tr class="${isD?'row-done':(isOnay?'row-onay':'row-waiting')}">
-                        <td style="width:30%;"><b>${d.urun}</b><br><small style="color:#666;">${d.barkod}${checkMark}</small></td>
-                        <td style="width:20%; font-weight:bold; color:#444;">${d.personel || '-'}</td>
-                        <td style="width:25%;">${kpCell}</td>
-                        <td style="width:25%;">${actionHtml}</td>
-                    </tr>`;
-                });
-
-                fullHtml += `
-                <div class="akis-card">
-                    <div style="background:linear-gradient(135deg, #217346, #165230); color:white; padding:10px 15px; font-weight:bold; font-size:12px; display:flex; justify-content:space-between; align-items:center; user-select:none;">
-                        <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
-                            <span style="font-size: 13px;">🏢 ${yer}</span>
-                            <span style="font-size:10px; font-weight:normal; opacity:0.85;">📅 ${tarih} - ⏰ ${saat}</span>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <div style="display:flex; flex-direction:column; align-items:flex-end;">
-                                <span style="font-size:9px; opacity:0.8; font-weight:normal; letter-spacing:0.5px;">TEKNİKER</span>
-                                <span style="font-size:12px;">${gonderenIsmi}</span>
-                            </div>
-                            <button class="btn-circle" onclick="openAkisMenu(event, '${gKey}')">⋮</button>
-                        </div>
-                    </div>
-                    <table class="excel-table"><thead><tr><th style="width:30%;">Ürün-Barkod</th><th style="width:20%;">Personel</th><th style="width:25%;">KP NO</th><th style="width:25%;">Transfer</th></tr></thead><tbody>${rowsHtml}</tbody></table>
-                </div>`;
-            });
-            
-            container.innerHTML = fullHtml;
-            if(document.getElementById('akis-ara') && document.getElementById('akis-ara').value !== '') filterAkis();
-        });
-
-        db.ref('depolar').on('value', snap => {
-            const c = document.getElementById('depoExList'); 
-            let fullDepoHtml = "";
-            
-            if (!snap.exists() || snap.numChildren() === 0) {
-                c.innerHTML = '<div style="text-align:center; padding:40px 20px; color:#999; font-size:14px; font-weight:bold;">📦 Henüz hiçbir depoda kayıtlı ürün yok.<br><br>Yukarıdaki butonu kullanarak ilk eklemeyi yapabilirsiniz.</div>';
-                return;
-            }
-
-            snap.forEach(d => {
-                const depoKey = d.key;
-                let rws = ""; 
-                d.forEach(r => { 
-                    const v = r.val(); 
-                    const itemKey = r.key;
-                    const safeUrun = (v.urun||'').replace(/"/g, '&quot;').replace(/'/g, "\\'");
-                    const safeBarkod = (v.barkod||'').replace(/"/g, '&quot;').replace(/'/g, "\\'");
-                    
-                    rws += `
-                    <tr class="depo-row" onclick="openDepoItemMenu('${depoKey}', '${itemKey}', '${safeUrun}', '${safeBarkod}')">
-                        <td style="font-weight:bold; color:#444;">${v.urun}</td>
-                        <td style="color:#666;">${v.barkod}</td>
-                        <td style="width: 30px; text-align: center; color: #999; font-size: 16px;">⋮</td>
-                    </tr>`; 
-                });
-                
-                fullDepoHtml += `
-                <div class="depo-card">
-                    <div style="background:linear-gradient(135deg, #217346, #165230); color:white; padding:12px 15px; font-weight:bold; font-size:13px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>📦 ${depoKey} Araç Deposu</div>
-                        <button onclick="depoyaManuelEkle('${depoKey}')" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.4); color:white; border-radius:6px; padding:5px 12px; cursor:pointer; font-size:11px; font-weight:bold; transition:0.2s;">➕ EKLE</button>
-                    </div>
-                    <table class="excel-table">${rws}</table>
-                </div>`;
-            });
-            c.innerHTML = fullDepoHtml;
         });
     }
 
@@ -857,7 +932,7 @@
             const trimmed = n.trim(); const upper = trimmed.toLocaleUpperCase('tr-TR');
             const processedList = getProcessedList(staticSubeler, dynamicSubeler, 'sube');
             
-            if(processedList.some(s => s.ad.toLocaleUpperCase('tr-TR') === upper)) { alert("Bu şube zaten listede mevcut!"); return; }
+            if(processedList.some(s => s.ad.toLocaleUpperCase('tr-TR') === upper)) { alert("Bu şube/lokasyon zaten listede mevcut!"); return; }
 
             isAddingSube = true;
             db.ref('ayarlar/sube_listesi').push(trimmed).then(() => {
@@ -938,6 +1013,9 @@
 
         const rowElements = Array.from(document.querySelectorAll('.excel-row-container')).reverse();
 
+        // 1. Çevrimdışı Belleği Al
+        let offlineList = JSON.parse(localStorage.getItem('s016_offline_q') || '[]');
+
         rowElements.forEach(row => {
             const b = String(row.querySelector('.barkod-input').value).trim();
             const u = row.querySelector('.urun-input').value;
@@ -950,17 +1028,26 @@
                     barkod: b, urun: u, status: "BEKLEMEDE", kp: kpVal, 
                     tarih: tarih, saat: saat, gonderen_kod: uFullKey 
                 };
-                db.ref('transferler/canli_akis').push(data);
+                
+                // 2. Buluta değil, önce kendi hafızana yaz
+                offlineList.push({ path: 'transferler/canli_akis', data: data });
                 addedCount++;
             }
         });
+
+        // 3. Hafızayı güncelle
+        localStorage.setItem('s016_offline_q', JSON.stringify(offlineList));
 
         if (addedCount > 0) { 
             document.getElementById('items-container').innerHTML = ""; 
             document.getElementById('personel-name').value = "";
             addRowEx("ÇIKIŞ"); addRowEx("GİRİŞ"); 
         }
-        alert(addedCount > 0 ? "Başarıyla kaydedildi." : "Kaydedilecek veri yok.");
+        
+        alert(addedCount > 0 ? "Kayıtlar hafızaya alındı, senkronize ediliyor..." : "Kaydedilecek veri yok.");
+        
+        // 4. Müsaitse hemen buluta pompalamayı dene
+        processOfflineQueue();
     }
 
     function filterSubeler() {
@@ -1048,4 +1135,4 @@
     }
 </script>
 </body>
-</html>
+    </html>
