@@ -594,10 +594,19 @@
             if(document.getElementById('sube-modal').style.display === 'block') filterSubeler(); 
         });
 
+        // AKIŞ EKRANI CANLI DİNLEME (GÜNCELLENDİ)
         db.ref('transferler/canli_akis').on('value', snap => {
             const container = document.getElementById('akis-container');
             if(!container) return;
             
+            // Konteyneri sıfırla ki her güncellemede üst üste binmesin
+            container.innerHTML = "";
+
+            if (!snap.exists()) {
+                container.innerHTML = "<div style='padding:20px; text-align:center; color:#999;'>Henüz bir hareket yok.</div>";
+                return;
+            }
+
             const groupedData = {}; const groupOrder = [];
             
             snap.forEach(i => {
@@ -670,7 +679,10 @@
             });
             
             container.innerHTML = fullHtml;
-            if(document.getElementById('akis-ara') && document.getElementById('akis-ara').value !== '') filterAkis();
+            
+            // Eğer arama yapılıyorsa filtreyi koru
+            const searchVal = document.getElementById('akis-ara').value;
+            if(searchVal !== '') filterAkis();
         });
 
         db.ref('depolar').on('value', snap => {
@@ -755,14 +767,12 @@
         setTimeout(() => { document.addEventListener('click', function closeMenu(ev) { if (!ev.target.closest('#akis-context-menu')) { menu.style.display = 'none'; document.removeEventListener('click', closeMenu); } }); }, 10);
     }
 
-    // YENİ FONKSİYON: Arızalı ürünleri Excel panosuna formatlayarak kopyalar
     async function copyToExcel() {
         document.getElementById('akis-context-menu').style.display = 'none';
         if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
         
         const groupData = currentAkisData[selectedAkisGKey];
         let excelRows = [];
-        
         const today = new Date();
         const tarihStr = today.toLocaleDateString('tr-TR', {day: '2-digit', month: '2-digit', year: 'numeric'});
         
@@ -772,15 +782,6 @@
                 const urun = d.urun || "";
                 const barkod = d.barkod || "";
                 const kpNo = d.kp || "";
-                
-                // Excel sıralamasına göre tab (\t) boşlukları bırakıyoruz:
-                // B Sütunu: urun
-                // C Sütunu: barkod
-                // D Sütunu: (BOŞ GEÇİLİYOR - Seri No)
-                // E Sütunu: kpNo
-                // F Sütunu: (BOŞ GEÇİLİYOR - Gönderildiği Yer)
-                // G Sütunu: tarihStr
-                // H Sütunu: Adaksu
                 const row = `${urun}\t${barkod}\t\t${kpNo}\t\t${tarihStr}\tAdaksu`;
                 excelRows.push(row);
             }
@@ -792,14 +793,11 @@
         }
 
         const finalString = excelRows.join('\n');
-
         try { 
             await navigator.clipboard.writeText(finalString); 
-            alert("✅ Arızalı cihaz verileri Excel formatında kopyalandı!\n\nŞimdi Excel'de B sütununa (MODEL hücresine) tıklayıp doğrudan 'Yapıştır' diyebilirsiniz."); 
+            alert("✅ Arızalı cihaz verileri Excel formatında kopyalandı!"); 
         } 
-        catch (err) { 
-            alert("Kopyalama başarısız oldu. Tarayıcınız pano erişimine izin vermiyor olabilir."); 
-        }
+        catch (err) { alert("Kopyalama başarısız!"); }
     }
 
     async function sendAkisMail() {
@@ -815,8 +813,8 @@
         });
 
         const bodyText = `Sayın Yetkili,\n\nArızalı olan cihazın değişimi gerçekleştirilmiş olup, envanter bilgileri aşağıda yer almaktadır.\n\nTakılan: ${takilanlar.join(', ')}\nArızalı : ${alinanlar.join(', ')}\n\nBilgilerinize,\nİyi çalışmalar.`;
-        try { await navigator.clipboard.writeText(bodyText); alert("✅ İçerik panoya kopyalandı!\nE-posta uygulamanız açılıyor..."); } 
-        catch (err) { alert("Metin panoya otomatik kopyalanamadı. Lütfen manuel olarak kopyalayın.\n\n" + bodyText); }
+        try { await navigator.clipboard.writeText(bodyText); alert("✅ İçerik panoya kopyalandı!"); } 
+        catch (err) { }
 
         const to = "btsahaoperasyonlariyonetimiyetkili@ziraatbank.com.tr";
         const subject = "Envanter Transferi S016 Hk.";
@@ -837,7 +835,6 @@
         const rowId = 'brk-' + Math.random().toString(36).substr(2, 9);
         const inputId = 'urun-' + rowId;
         const div = document.createElement('div'); div.className = "excel-row-container";
-        
         const processedList = getProcessedList(staticProductsList, dynamicEnvanterler, 'urun');
         const defaultUrun = processedList.length > 0 ? processedList[0].ad : "";
 
@@ -862,9 +859,7 @@
         if(n && n.trim() !== "") {
             const trimmed = n.trim(); const upper = trimmed.toLocaleUpperCase('tr-TR');
             const processedList = getProcessedList(staticSubeler, dynamicSubeler, 'sube');
-            
-            if(processedList.some(s => s.ad.toLocaleUpperCase('tr-TR') === upper)) { alert("Bu şube zaten listede mevcut!"); return; }
-
+            if(processedList.some(s => s.ad.toLocaleUpperCase('tr-TR') === upper)) { alert("Bu şube zaten mevcut!"); return; }
             isAddingSube = true;
             db.ref('ayarlar/sube_listesi').push(trimmed).then(() => {
                 document.getElementById('sube-ara').value = trimmed;
@@ -875,13 +870,7 @@
     
     function openModal() { document.getElementById('sube-modal').style.display = 'block'; filterSubeler(); }
     function closeModal() { document.getElementById('sube-modal').style.display = 'none'; }
-    
-    function openEnvanterModal(inputId) { 
-        currentUrunInputId = inputId;
-        document.getElementById('envanter-modal').style.display = 'block'; 
-        renderEnvanterList(); 
-    }
-    
+    function openEnvanterModal(inputId) { currentUrunInputId = inputId; document.getElementById('envanter-modal').style.display = 'block'; renderEnvanterList(); }
     function closeEnvanterModal() { document.getElementById('envanter-modal').style.display = 'none'; }
 
     let isAddingEnv = false;
@@ -891,9 +880,7 @@
         if(n && n.trim() !== "") {
             const trimmed = n.trim(); const upper = trimmed.toLocaleUpperCase('tr-TR');
             const processedList = getProcessedList(staticProductsList, dynamicEnvanterler, 'urun');
-            
-            if(processedList.some(s => s.ad.toLocaleUpperCase('tr-TR') === upper)) { alert("Bu envanter zaten listede mevcut!"); return; }
-
+            if(processedList.some(s => s.ad.toLocaleUpperCase('tr-TR') === upper)) { alert("Bu envanter zaten mevcut!"); return; }
             isAddingEnv = true;
             db.ref('ayarlar/urun_listesi').push(trimmed).then(() => { 
                 document.getElementById('env-ara').value = trimmed;
@@ -902,10 +889,7 @@
         }
     }
 
-    function selectEnvanter(ad) {
-        if(currentUrunInputId) { document.getElementById(currentUrunInputId).value = ad; }
-        closeEnvanterModal();
-    }
+    function selectEnvanter(ad) { if(currentUrunInputId) { document.getElementById(currentUrunInputId).value = ad; } closeEnvanterModal(); }
 
     function approveTransfer(key) {
         db.ref('transferler/canli_akis/' + key).once('value', s => {
@@ -920,35 +904,25 @@
         const processedList = getProcessedList(staticProductsList, dynamicEnvanterler, 'urun');
         const validNames = processedList.map(s => s.ad);
         const defaultUrun = validNames.length > 0 ? validNames[0] : "";
-
-        document.querySelectorAll('.urun-input').forEach(inp => {
-            if(inp.value && !validNames.includes(inp.value)) {
-                inp.value = defaultUrun;
-            }
-        });
+        document.querySelectorAll('.urun-input').forEach(inp => { if(inp.value && !validNames.includes(inp.value)) { inp.value = defaultUrun; } });
     }
 
     async function saveAllEx() {
         const target = document.getElementById('target-sube').value;
         const pers = document.getElementById('personel-name').value.trim();
-        
         if(!target || target === "Hedef Lokasyon Seçin") return alert("Lütfen bir lokasyon seçin!");
         if(!pers) return alert("Lütfen Personel İsmi giriniz!");
-
         let addedCount = 0;
         const kpFormatted = formatKP(target);
-        
         const now = new Date();
         const tarih = now.toLocaleDateString('tr-TR');
         const saat = now.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
-
         const rowElements = Array.from(document.querySelectorAll('.excel-row-container')).reverse();
 
         rowElements.forEach(row => {
             const b = String(row.querySelector('.barkod-input').value).trim();
             const u = row.querySelector('.urun-input').value;
             const type = row.querySelector('.type-select').value;
-            
             if(b) {
                 const kpVal = (type === "ÇIKIŞ") ? kpFormatted : "";
                 const data = { 
@@ -972,23 +946,11 @@
     function filterSubeler() {
         const ara = document.getElementById('sube-ara').value.toLocaleUpperCase('tr-TR');
         const list = document.getElementById('modal-list-body'); list.innerHTML = "";
-        
         const processedList = getProcessedList(staticSubeler, dynamicSubeler, 'sube');
-        
         processedList.filter(s => s.ad.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
             const d = document.createElement('div'); d.className = "sube-item"; 
-            
-            d.innerHTML = `
-                <div style="display:flex; width:100%; align-items:center;">
-                    <span style="font-size:16px; margin-right:10px;">🏢</span>
-                    <span style="flex:1; font-weight:bold; color:#444;">${s.ad}</span>
-                    <span style="color:#999; font-size:10px; background:#f5f5f5; padding:4px 8px; border-radius:12px; white-space:nowrap;">⏳ Basılı Tut</span>
-                </div>`; 
-                
-            addLongPressListener(d, 
-                () => { document.getElementById('target-sube').value = s.ad; closeModal(); }, 
-                () => { openAS(s.ad, 'sube', s); }
-            );
+            d.innerHTML = `<div style="display:flex; width:100%; align-items:center;"><span style="font-size:16px; margin-right:10px;">🏢</span><span style="flex:1; font-weight:bold; color:#444;">${s.ad}</span><span style="color:#999; font-size:10px; background:#f5f5f5; padding:4px 8px; border-radius:12px; white-space:nowrap;">⏳ Basılı Tut</span></div>`; 
+            addLongPressListener(d, () => { document.getElementById('target-sube').value = s.ad; closeModal(); }, () => { openAS(s.ad, 'sube', s); });
             list.appendChild(d);
         });
     }
@@ -996,23 +958,11 @@
     function renderEnvanterList() {
         const ara = document.getElementById('env-ara').value.toLocaleUpperCase('tr-TR');
         const list = document.getElementById('envanter-list-body'); list.innerHTML = "";
-        
         const processedList = getProcessedList(staticProductsList, dynamicEnvanterler, 'urun');
-        
         processedList.filter(s => s.ad.toLocaleUpperCase('tr-TR').includes(ara)).forEach(s => {
             const d = document.createElement('div'); d.className = "sube-item"; 
-            
-            d.innerHTML = `
-                <div style="display:flex; width:100%; align-items:center;">
-                    <span style="font-size:16px; margin-right:10px;">📦</span>
-                    <span style="flex:1; font-weight:bold; color:#444;">${s.ad}</span>
-                    <span style="color:#999; font-size:10px; background:#f5f5f5; padding:4px 8px; border-radius:12px; white-space:nowrap;">⏳ Basılı Tut</span>
-                </div>`; 
-                
-            addLongPressListener(d, 
-                () => { selectEnvanter(s.ad); }, 
-                () => { openAS(s.ad, 'urun', s); }
-            );
+            d.innerHTML = `<div style="display:flex; width:100%; align-items:center;"><span style="font-size:16px; margin-right:10px;">📦</span><span style="flex:1; font-weight:bold; color:#444;">${s.ad}</span><span style="color:#999; font-size:10px; background:#f5f5f5; padding:4px 8px; border-radius:12px; white-space:nowrap;">⏳ Basılı Tut</span></div>`; 
+            addLongPressListener(d, () => { selectEnvanter(s.ad); }, () => { openAS(s.ad, 'urun', s); });
             list.appendChild(d);
         });
     }
@@ -1022,17 +972,31 @@
         document.getElementById('target-sube').placeholder = `📍 Hedef Lokasyon Seçin (${processedList.length})`; 
     }
     
-    function tabEx(id, el) { document.querySelectorAll('.app-page').forEach(p => p.style.display = 'none'); document.getElementById('p-'+id).style.display = 'block'; document.querySelectorAll('.excel-nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+    // TAB FONKSİYONU (GÜNCELLENDİ)
+    function tabEx(id, el) { 
+        document.querySelectorAll('.app-page').forEach(p => p.style.display = 'none'); 
+        document.getElementById('p-'+id).style.display = 'block'; 
+        document.querySelectorAll('.excel-nav-item').forEach(n => n.classList.remove('active')); 
+        el.classList.add('active'); 
+
+        // Akış sekmesine tıklandığında anlık filtreleme ve görünüm tazeleme
+        if(id === 'akis') {
+            filterAkis();
+        }
+    }
 
     function filterAkis() {
-        const ara = document.getElementById('akis-ara').value.toLocaleUpperCase('tr-TR');
+        const araInput = document.getElementById('akis-ara');
+        if(!araInput) return;
+        const ara = araInput.value.toLocaleUpperCase('tr-TR');
         const wrappers = document.querySelectorAll('#akis-container > div');
 
         wrappers.forEach(wrapper => {
-            const locationHeader = wrapper.querySelector('div').innerText.toLocaleUpperCase('tr-TR');
+            const headerElement = wrapper.querySelector('div');
+            if(!headerElement) return;
+            const locationHeader = headerElement.innerText.toLocaleUpperCase('tr-TR');
             const rows = wrapper.querySelectorAll('tbody tr');
             let hasVisibleRow = false;
-
             const locationMatch = locationHeader.includes(ara);
 
             rows.forEach(row => {
