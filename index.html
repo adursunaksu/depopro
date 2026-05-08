@@ -459,6 +459,9 @@
                 document.getElementById('email').value = savedMail;
                 document.getElementById('pass').value = savedPass;
                 document.getElementById('rem-check').checked = true;
+                
+                // OTOMATİK GİRİŞ İÇİN EKSİK OLAN TETİKLEYİCİ
+                login();
             }
         }
     });
@@ -755,7 +758,6 @@
         setTimeout(() => { document.addEventListener('click', function closeMenu(ev) { if (!ev.target.closest('#akis-context-menu')) { menu.style.display = 'none'; document.removeEventListener('click', closeMenu); } }); }, 10);
     }
 
-    // YENİ FONKSİYON: Arızalı ürünleri Excel panosuna formatlayarak kopyalar
     async function copyToExcel() {
         document.getElementById('akis-context-menu').style.display = 'none';
         if(!selectedAkisGKey || !currentAkisData[selectedAkisGKey]) return;
@@ -773,14 +775,6 @@
                 const barkod = d.barkod || "";
                 const kpNo = d.kp || "";
                 
-                // Excel sıralamasına göre tab (\t) boşlukları bırakıyoruz:
-                // B Sütunu: urun
-                // C Sütunu: barkod
-                // D Sütunu: (BOŞ GEÇİLİYOR - Seri No)
-                // E Sütunu: kpNo
-                // F Sütunu: (BOŞ GEÇİLİYOR - Gönderildiği Yer)
-                // G Sütunu: tarihStr
-                // H Sütunu: Adaksu
                 const row = `${urun}\t${barkod}\t\t${kpNo}\t\t${tarihStr}\tAdaksu`;
                 excelRows.push(row);
             }
@@ -1055,4 +1049,3 @@
 </script>
 </body>
 </html>
-
